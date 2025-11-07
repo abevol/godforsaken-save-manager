@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "godforsaken-save-manager"
+version = "1.0.0"
+description = "A save management tool for GodForsaken"
+authors = ["七夜听雪 <example@example.com>"]
+packages = [{ include = "godforsaken_save_manager", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.11, <3.13"
+PySide6 = "^6.7.0"
+psutil = "^5.9.8"
+
+[tool.poetry.scripts]
+godforsaken-save-manager = "godforsaken_save_manager.main:main"
+
+[tool.poetry.group.dev.dependencies]
+nuitka = "^2.8.4"
+
