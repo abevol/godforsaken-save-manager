@@ -6,7 +6,7 @@ from pathlib import Path
 import ctypes
 
 from PySide6.QtCore import Qt, Slot
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QIcon
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
     QTableWidgetItem, QHeaderView, QMessageBox, QInputDialog, QLabel, QLineEdit,
@@ -15,12 +15,21 @@ from PySide6.QtWidgets import (
 
 from ..core import backup_manager, process_checker, config_manager
 from .settings_window import SettingsWindow
+from ..common.paths import get_base_path
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("神弃之地存档备份管理器 v1.0")
+
+        # Use the robust path helper to find the icon
+        # In dev, base_path is .../ui/
+        # In prod, base_path is the temp _MEIPASS folder
+        base_path = get_base_path()
+        icon_path = base_path / "resources" / "app.ico"
+        self.setWindowIcon(QIcon(str(icon_path)))
+
         self.setMinimumSize(800, 600)
 
         self.backup_manager = backup_manager.BackupManager()
