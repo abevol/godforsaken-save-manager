@@ -33,7 +33,7 @@ class SettingsWindow(QDialog):
         self.max_history_spinbox.setRange(1, 999)
         self.restore_threshold_spinbox = QSpinBox()
         self.restore_threshold_spinbox.setRange(0, 9999)
-        self.auto_launch_checkbox = QCheckBox("恢复/备份后自动启动游戏")
+        self.auto_launch_checkbox = QCheckBox("备份/恢复后自动启动游戏")
 
         # Path selection buttons
         self.game_save_path_button = QPushButton("选择")

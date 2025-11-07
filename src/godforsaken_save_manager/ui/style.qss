@@ -30,3 +30,33 @@ QCheckBox::indicator {
     width: 20px;
     height: 20px;
 }
+
+QGroupBox {
+    font-size: 16px;
+}
+
+QTabBar::tab {
+    font-size: 16px;
+    padding: 10px 20px;
+    border: 1px solid #444;
+    border-bottom: none;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    background-color: #333;
+    color: #fff;
+}
+
+QTabBar::tab:selected {
+    background-color: #555;
+    border-color: #555;
+}
+
+QTabBar::tab:!selected {
+    background-color: #222;
+    margin-top: 2px;
+}
+
+QTabWidget::pane {
+    border: 1px solid #555;
+    top: -1px;
+}

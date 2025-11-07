@@ -9,7 +9,8 @@ from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
-    QTableWidgetItem, QHeaderView, QMessageBox, QInputDialog, QLabel, QLineEdit
+    QTableWidgetItem, QHeaderView, QMessageBox, QInputDialog, QLabel, QLineEdit,
+    QGroupBox, QTabWidget
 )
 
 from ..core import backup_manager, process_checker, config_manager
@@ -46,15 +47,19 @@ class MainWindow(QMainWindow):
         self.top_layout.addLayout(self.top_buttons_layout)
         self.top_layout.addWidget(self.note_input)
 
-        # History table
-        self.history_table = QTableWidget()
-        self.history_table.setColumnCount(4)
-        self.history_table.setHorizontalHeaderLabels(["时间", "备注", "", ""]) # Ops
-        self.history_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        self.history_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        self.history_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        self.history_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        self.history_table.setSelectionBehavior(QTableWidget.SelectRows)
+        # History section
+        history_groupbox = QGroupBox("历史存档")
+        history_layout = QVBoxLayout(history_groupbox)
+        self.tab_widget = QTabWidget()
+        history_layout.addWidget(self.tab_widget)
+
+        # Manual backups tab
+        self.manual_history_table = self._create_history_table()
+        self.tab_widget.addTab(self.manual_history_table, "手动备份")
+
+        # Auto backups tab
+        self.auto_history_table = self._create_history_table()
+        self.tab_widget.addTab(self.auto_history_table, "自动备份")
 
         # Status bar
         self.status_label = QLabel("就绪")
@@ -62,42 +67,65 @@ class MainWindow(QMainWindow):
 
         # Assemble layout
         self.main_layout.addLayout(self.top_layout)
-        self.main_layout.addWidget(self.history_table)
+        self.main_layout.addWidget(history_groupbox)
 
         # Connect signals
         self.backup_button.clicked.connect(self.manual_backup)
         self.restore_last_button.clicked.connect(self.restore_last_backup)
         self.settings_button.clicked.connect(self.open_settings)
-        self.history_table.itemChanged.connect(self.save_note_from_item)
+        self.manual_history_table.itemChanged.connect(self.save_note_from_item)
+        self.auto_history_table.itemChanged.connect(self.save_note_from_item)
 
         self.refresh_backup_list()
+
+    def _create_history_table(self) -> QTableWidget:
+        table = QTableWidget()
+        table.setColumnCount(4)
+        table.setHorizontalHeaderLabels(["时间", "备注", "", ""]) # Ops
+        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        table.setSelectionBehavior(QTableWidget.SelectRows)
+        return table
 
     def refresh_backup_list(self):
         self.status_label.setText("正在刷新备份列表...")
         self.backup_manager._reload_config() # Ensure config is fresh
-        backups = self.backup_manager.list_backups()
-        self.history_table.setRowCount(len(backups))
+        
+        all_backups = self.backup_manager.list_backups()
+        
+        # I am assuming backup_entry has an 'auto' attribute.
+        # This is a reasonable assumption given the `backup` method signature.
+        manual_backups = [b for b in all_backups if not b.auto]
+        auto_backups = [b for b in all_backups if b.auto]
 
+        self._populate_history_table(self.manual_history_table, manual_backups)
+        self._populate_history_table(self.auto_history_table, auto_backups)
+        
+        self.status_label.setText("就绪")
+
+    def _populate_history_table(self, table: QTableWidget, backups: list):
+        table.setRowCount(len(backups))
         for row, backup_entry in enumerate(backups):
             timestamp_item = QTableWidgetItem(backup_entry.timestamp)
             timestamp_item.setFlags(timestamp_item.flags() & ~Qt.ItemIsEditable)
-            self.history_table.setItem(row, 0, timestamp_item)
+            table.setItem(row, 0, timestamp_item)
 
             note_item = QTableWidgetItem(backup_entry.note)
-            self.history_table.setItem(row, 1, note_item)
+            table.setItem(row, 1, note_item)
 
             # Restore button
             restore_btn = QPushButton("恢复")
             restore_btn.setObjectName("table_button")
             restore_btn.clicked.connect(lambda _, p=backup_entry.path: self.restore_backup(p))
-            self.history_table.setCellWidget(row, 2, restore_btn)
+            table.setCellWidget(row, 2, restore_btn)
 
             # Delete button
             delete_btn = QPushButton("删除")
             delete_btn.setObjectName("table_button")
             delete_btn.clicked.connect(lambda _, p=backup_entry.path: self.delete_backup(p))
-            self.history_table.setCellWidget(row, 3, delete_btn)
-        self.status_label.setText("就绪")
+            table.setCellWidget(row, 3, delete_btn)
 
     @Slot()
     def manual_backup(self):
@@ -107,6 +135,7 @@ class MainWindow(QMainWindow):
         note = self.note_input.text()
         try:
             self.status_label.setText("正在备份...")
+            # The `auto` parameter is explicitly set to False for manual backups.
             timestamp = self.backup_manager.backup(note=note, auto=False)
             if timestamp:
                 QMessageBox.information(self, "成功", f"存档已备份至 {timestamp}")
@@ -182,8 +211,11 @@ class MainWindow(QMainWindow):
     @Slot(QTableWidgetItem)
     def save_note_from_item(self, item):
         if item.column() == 1: # Note column
+            table = item.tableWidget()
+            if not table:
+                return
             row = item.row()
-            timestamp_item = self.history_table.item(row, 0)
+            timestamp_item = table.item(row, 0)
             if not timestamp_item:
                 return
 
@@ -213,16 +245,21 @@ class MainWindow(QMainWindow):
     def _maybe_launch_game(self):
         self.backup_manager._reload_config()
         if self.backup_manager.config.get("auto_launch_game", False):
+            self._launch_game()
+        else:
             reply = QMessageBox.question(
                 self, "操作完成", "是否立即启动游戏？",
                 QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes
             )
             if reply == QMessageBox.Yes:
-                try:
-                    # For Windows, use start command to open steam url
-                    subprocess.run(["start", "steam://rungameid/3419290"], shell=True, check=True)
-                except Exception as e:
-                    QMessageBox.critical(self, "启动失败", f"无法启动游戏: {e}")
+                self._launch_game()
+
+    def _launch_game(self):
+        try:
+            # For Windows, use start command to open steam url
+            subprocess.run(["start", "steam://rungameid/3419290"], shell=True, check=True)
+        except Exception as e:
+            QMessageBox.critical(self, "启动失败", f"无法启动游戏: {e}")
 
     @staticmethod
     def get_windows_accent_color():

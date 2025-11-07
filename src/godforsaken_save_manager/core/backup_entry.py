@@ -9,3 +9,4 @@ class BackupEntry:
     timestamp: str  # "2025-11-06_18-30-47"
     note: str
     profile_mtime: datetime
+    auto: bool

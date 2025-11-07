@@ -10,7 +10,7 @@ DEFAULTS = {
     "backup_root_path": str(CONFIG_DIR / "game_save_my_bak"),
     "auto_backup_root_path": str(CONFIG_DIR / "game_save_auto_bak"),
     "last_backup": "",
-    "max_history": 20,
+    "max_history": 30,
     "restore_confirm_threshold_minutes": 20,
     "auto_launch_game": True,
     "notes": {}

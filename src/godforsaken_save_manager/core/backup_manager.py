@@ -1,4 +1,3 @@
-
 import os
 import shutil
 from datetime import datetime
@@ -27,10 +26,9 @@ class BackupManager:
         manual_bak_path = Path(self.config["backup_root_path"])
         auto_bak_path = Path(self.config["auto_backup_root_path"])
 
-        for backup_dir in [manual_bak_path, auto_bak_path]:
-            if not backup_dir.exists():
-                continue
-            for entry in backup_dir.iterdir():
+        # Process manual backups
+        if manual_bak_path.exists():
+            for entry in manual_bak_path.iterdir():
                 if entry.is_dir():
                     profile_mtime = file_operations.get_profile_timestamp(entry)
                     if profile_mtime:
@@ -39,7 +37,23 @@ class BackupManager:
                             path=entry,
                             timestamp=entry.name,
                             note=note,
-                            profile_mtime=profile_mtime
+                            profile_mtime=profile_mtime,
+                            auto=False
+                        ))
+
+        # Process auto backups
+        if auto_bak_path.exists():
+            for entry in auto_bak_path.iterdir():
+                if entry.is_dir():
+                    profile_mtime = file_operations.get_profile_timestamp(entry)
+                    if profile_mtime:
+                        note = self.config["notes"].get(entry.name, "")
+                        backups.append(BackupEntry(
+                            path=entry,
+                            timestamp=entry.name,
+                            note=note,
+                            profile_mtime=profile_mtime,
+                            auto=True
                         ))
 
         # Sort by profile modification time, descending
@@ -69,7 +83,8 @@ class BackupManager:
 
         target_backup_path = backup_root / timestamp_str
 
-        # Check if a backup with the same timestamp already exists
+        # Check if a backup with the same timestamp already exists in the target location.
+        # This provides independent deduplication for manual and auto backups.
         if target_backup_path.exists():
             print(f"Backup for timestamp {timestamp_str} already exists. Skipping.")
             return None
@@ -140,12 +155,24 @@ class BackupManager:
         return abs((current_mtime - backup_mtime).total_seconds() / 60.0)
 
     def _enforce_max_history(self):
-        """Deletes the oldest backups if the total number exceeds max_history."""
+        """Deletes the oldest backups for each type if they exceed the configured limit."""
         self._reload_config()
-        max_history = self.config.get("max_history", DEFAULTS["max_history"])
-        all_backups = self.list_backups() # Already sorted newest to oldest
+        max_history = self.config.get("max_history", 30)
+        all_backups = self.list_backups()
 
-        if len(all_backups) > max_history:
-            backups_to_delete = all_backups[max_history:]
+        manual_backups = [b for b in all_backups if not b.auto]
+        auto_backups = [b for b in all_backups if b.auto]
+
+        # Enforce for manual backups
+        if len(manual_backups) > max_history:
+            backups_to_delete = manual_backups[max_history:]
             for backup in backups_to_delete:
+                print(f"Purging old manual backup: {backup.path}")
+                self.delete(backup.path)
+
+        # Enforce for auto backups
+        if len(auto_backups) > max_history:
+            backups_to_delete = auto_backups[max_history:]
+            for backup in backups_to_delete:
+                print(f"Purging old auto backup: {backup.path}")
                 self.delete(backup.path)
