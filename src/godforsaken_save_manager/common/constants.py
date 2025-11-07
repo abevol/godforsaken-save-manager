@@ -1,5 +1,5 @@
 CONFIG_FILE_NAME = "config.json"
 PROFILE_BRIEF_FILE_NAME = "ProfileBrief.ssp"
-GAME_EXECUTABLE_NAME = "GodForsaken.exe"
+GAME_MUTEX_NAME = "n-GOD-FORSAKEN-GodForsaken-exe-SingleInstanceMutex-Default"
 AUTO_BACKUP_NOTE_PREFIX = "[ 自动备份 ]"
 DATETIME_FORMAT = "%Y-%m-%d_%H-%M-%S"

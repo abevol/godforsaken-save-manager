@@ -9,6 +9,7 @@ packages = [{ include = "godforsaken_save_manager", from = "src" }]
 python = ">=3.11, <3.13"
 PySide6 = "^6.7.0"
 psutil = "^5.9.8"
+pywin32 = "^311"
 
 [tool.poetry.scripts]
 godforsaken-save-manager = "godforsaken_save_manager.main:main"
