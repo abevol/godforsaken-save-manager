@@ -12,7 +12,7 @@ call poetry run nuitka ^
   --onefile ^
   --windows-icon-from-ico="src/godforsaken_save_manager/ui/resources/app.ico" ^
   --enable-plugin=pyside6 ^
-  --include-data-file=src/godforsaken_save_manager/ui/style.qss=style.qss ^
+  --include-data-dir=src/godforsaken_save_manager/ui/styles=styles ^
   --include-data-dir=src/godforsaken_save_manager/ui/resources=resources ^
   --output-dir=build ^
   --output-filename=GodForsakenSaveManager.exe ^

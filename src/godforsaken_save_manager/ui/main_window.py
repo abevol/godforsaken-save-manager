@@ -10,7 +10,7 @@ from PySide6.QtGui import QColor, QIcon
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
     QTableWidgetItem, QHeaderView, QMessageBox, QInputDialog, QLabel, QLineEdit,
-    QGroupBox, QTabWidget
+    QGroupBox, QTabWidget, QFrame
 )
 
 from ..core import backup_manager, process_checker, config_manager
@@ -89,6 +89,7 @@ class MainWindow(QMainWindow):
 
     def _create_history_table(self) -> QTableWidget:
         table = QTableWidget()
+        table.setFrameShape(QFrame.NoFrame)
         table.setColumnCount(4)
         table.setHorizontalHeaderLabels(["时间", "备注", "", ""]) # Ops
         table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)

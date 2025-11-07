@@ -1,0 +1,62 @@
+QPushButton {
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+QPushButton#table_button {
+    padding: 3px 8px;
+    font-size: 12px;
+}
+
+QLineEdit#note_input_main, QLineEdit#setting_line_edit {
+    min-height: 32px;
+    font-size: 16px;
+}
+
+QWidget#settings_form QLabel {
+    font-size: 16px;
+}
+
+QSpinBox {
+    min-height: 32px;
+    font-size: 16px;
+}
+
+QCheckBox {
+    font-size: 16px;
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+}
+
+QGroupBox {
+    font-size: 16px;
+}
+
+QTabBar::tab {
+    font-size: 16px;
+    padding: 10px 20px;
+    border: 1px solid #444444;
+    border-bottom: none;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    background-color: #333333;
+    color: #ffffff;
+}
+
+QTabBar::tab:selected {
+    background-color: #555555;
+    border-color: #555555;
+}
+
+QTabBar::tab:!selected {
+    background-color: #222222;
+    margin-top: 2px;
+}
+
+QTabWidget::pane {
+    border: 1px solid #555555;
+    top: -1px;
+}

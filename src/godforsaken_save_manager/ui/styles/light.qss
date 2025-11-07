@@ -38,25 +38,25 @@ QGroupBox {
 QTabBar::tab {
     font-size: 16px;
     padding: 10px 20px;
-    border: 1px solid #444;
+    border: 1px solid #cccccc;
     border-bottom: none;
     border-top-left-radius: 6px;
     border-top-right-radius: 6px;
-    background-color: #333;
-    color: #fff;
+    background-color: #f0f0f0;
+    color: #000000;
 }
 
 QTabBar::tab:selected {
-    background-color: #555;
-    border-color: #555;
+    background-color: #ffffff;
+    border-color: #bbbbbb;
 }
 
 QTabBar::tab:!selected {
-    background-color: #222;
+    background-color: #e0e0e0;
     margin-top: 2px;
 }
 
 QTabWidget::pane {
-    border: 1px solid #555;
+    border: 1px solid #bbbbbb;
     top: -1px;
 }
