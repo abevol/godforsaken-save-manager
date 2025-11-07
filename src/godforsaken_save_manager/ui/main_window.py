@@ -29,18 +29,22 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.central_widget)
         self.main_layout = QVBoxLayout(self.central_widget)
 
-        # Top buttons
+        # Top layout
+        self.top_layout = QVBoxLayout()
         self.top_buttons_layout = QHBoxLayout()
-        self.backup_button = QPushButton("备份当前存档")
-        self.backup_button.setDefault(True)
         self.note_input = QLineEdit()
         self.note_input.setObjectName("note_input_main")
         self.note_input.setPlaceholderText("存档备注")
+        self.backup_button = QPushButton("备份当前存档")
+        self.backup_button.setDefault(True)
+        self.restore_last_button = QPushButton("恢复最近存档")
         self.settings_button = QPushButton("设置")
         self.top_buttons_layout.addWidget(self.backup_button)
-        self.top_buttons_layout.addWidget(self.note_input)
+        self.top_buttons_layout.addWidget(self.restore_last_button)
         self.top_buttons_layout.addStretch()
         self.top_buttons_layout.addWidget(self.settings_button)
+        self.top_layout.addLayout(self.top_buttons_layout)
+        self.top_layout.addWidget(self.note_input)
 
         # History table
         self.history_table = QTableWidget()
@@ -57,11 +61,12 @@ class MainWindow(QMainWindow):
         self.statusBar().addWidget(self.status_label)
 
         # Assemble layout
-        self.main_layout.addLayout(self.top_buttons_layout)
+        self.main_layout.addLayout(self.top_layout)
         self.main_layout.addWidget(self.history_table)
 
         # Connect signals
         self.backup_button.clicked.connect(self.manual_backup)
+        self.restore_last_button.clicked.connect(self.restore_last_backup)
         self.settings_button.clicked.connect(self.open_settings)
         self.history_table.itemChanged.connect(self.save_note_from_item)
 
@@ -113,6 +118,23 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "错误", f"备份失败: {e}")
         finally:
             self.refresh_backup_list()
+
+    @Slot()
+    def restore_last_backup(self):
+        if self._check_game_running():
+            return
+
+        last_backup_path_str = self.backup_manager.config.get("last_backup")
+        if not last_backup_path_str:
+            QMessageBox.warning(self, "错误", "没有找到最近的备份记录。")
+            return
+
+        last_backup_path = Path(last_backup_path_str)
+        if not last_backup_path.exists():
+            QMessageBox.warning(self, "错误", f"备份文件不存在: {last_backup_path}")
+            return
+
+        self.restore_backup(last_backup_path)
 
     @Slot(Path)
     def restore_backup(self, backup_path: Path):
