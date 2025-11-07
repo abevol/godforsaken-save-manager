@@ -1,1 +1,32 @@
-/* Add your QSS styles here */
+QPushButton {
+    padding: 10px 20px;
+    font-size: 16px;
+}
+
+QPushButton#table_button {
+    padding: 3px 8px;
+    font-size: 12px;
+}
+
+QLineEdit#note_input_main, QLineEdit#setting_line_edit {
+    min-height: 32px;
+    font-size: 16px;
+}
+
+QWidget#settings_form QLabel {
+    font-size: 16px;
+}
+
+QSpinBox {
+    min-height: 32px;
+    font-size: 16px;
+}
+
+QCheckBox {
+    font-size: 16px;
+}
+
+QCheckBox::indicator {
+    width: 20px;
+    height: 20px;
+}

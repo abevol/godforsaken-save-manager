@@ -3,10 +3,13 @@ import os
 import subprocess
 from pathlib import Path
 
+import ctypes
+
 from PySide6.QtCore import Qt, Slot
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
-    QTableWidgetItem, QHeaderView, QMessageBox, QInputDialog, QLabel
+    QTableWidgetItem, QHeaderView, QMessageBox, QInputDialog, QLabel, QLineEdit
 )
 
 from ..core import backup_manager, process_checker, config_manager
@@ -16,7 +19,7 @@ from .settings_window import SettingsWindow
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("神弃之地存档管理器 v1.0")
+        self.setWindowTitle("神弃之地存档备份管理器 v1.0")
         self.setMinimumSize(800, 600)
 
         self.backup_manager = backup_manager.BackupManager()
@@ -29,8 +32,13 @@ class MainWindow(QMainWindow):
         # Top buttons
         self.top_buttons_layout = QHBoxLayout()
         self.backup_button = QPushButton("备份当前存档")
+        self.backup_button.setDefault(True)
+        self.note_input = QLineEdit()
+        self.note_input.setObjectName("note_input_main")
+        self.note_input.setPlaceholderText("存档备注")
         self.settings_button = QPushButton("设置")
         self.top_buttons_layout.addWidget(self.backup_button)
+        self.top_buttons_layout.addWidget(self.note_input)
         self.top_buttons_layout.addStretch()
         self.top_buttons_layout.addWidget(self.settings_button)
 
@@ -42,7 +50,6 @@ class MainWindow(QMainWindow):
         self.history_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.history_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
         self.history_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        self.history_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.history_table.setSelectionBehavior(QTableWidget.SelectRows)
 
         # Status bar
@@ -56,7 +63,7 @@ class MainWindow(QMainWindow):
         # Connect signals
         self.backup_button.clicked.connect(self.manual_backup)
         self.settings_button.clicked.connect(self.open_settings)
-        self.history_table.cellDoubleClicked.connect(self.edit_note_on_double_click)
+        self.history_table.itemChanged.connect(self.save_note_from_item)
 
         self.refresh_backup_list()
 
@@ -67,16 +74,22 @@ class MainWindow(QMainWindow):
         self.history_table.setRowCount(len(backups))
 
         for row, backup_entry in enumerate(backups):
-            self.history_table.setItem(row, 0, QTableWidgetItem(backup_entry.timestamp))
-            self.history_table.setItem(row, 1, QTableWidgetItem(backup_entry.note))
+            timestamp_item = QTableWidgetItem(backup_entry.timestamp)
+            timestamp_item.setFlags(timestamp_item.flags() & ~Qt.ItemIsEditable)
+            self.history_table.setItem(row, 0, timestamp_item)
+
+            note_item = QTableWidgetItem(backup_entry.note)
+            self.history_table.setItem(row, 1, note_item)
 
             # Restore button
             restore_btn = QPushButton("恢复")
+            restore_btn.setObjectName("table_button")
             restore_btn.clicked.connect(lambda _, p=backup_entry.path: self.restore_backup(p))
             self.history_table.setCellWidget(row, 2, restore_btn)
 
             # Delete button
             delete_btn = QPushButton("删除")
+            delete_btn.setObjectName("table_button")
             delete_btn.clicked.connect(lambda _, p=backup_entry.path: self.delete_backup(p))
             self.history_table.setCellWidget(row, 3, delete_btn)
         self.status_label.setText("就绪")
@@ -86,20 +99,20 @@ class MainWindow(QMainWindow):
         if self._check_game_running():
             return
 
-        note, ok = QInputDialog.getText(self, "创建备份", "请输入备注 (可选):")
-        if ok:
-            try:
-                self.status_label.setText("正在备份...")
-                timestamp = self.backup_manager.backup(note=note, auto=False)
-                if timestamp:
-                    QMessageBox.information(self, "成功", f"存档已备份至 {timestamp}")
-                    self._maybe_launch_game()
-                else:
-                    QMessageBox.warning(self, "注意", "已存在相同时间戳的存档，本次未创建新备份。")
-            except Exception as e:
-                QMessageBox.critical(self, "错误", f"备份失败: {e}")
-            finally:
-                self.refresh_backup_list()
+        note = self.note_input.text()
+        try:
+            self.status_label.setText("正在备份...")
+            timestamp = self.backup_manager.backup(note=note, auto=False)
+            if timestamp:
+                QMessageBox.information(self, "成功", f"存档已备份至 {timestamp}")
+                self.note_input.clear()
+                self._maybe_launch_game()
+            else:
+                QMessageBox.warning(self, "注意", "已存在相同时间戳的存档，本次未创建新备份。")
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"备份失败: {e}")
+        finally:
+            self.refresh_backup_list()
 
     @Slot(Path)
     def restore_backup(self, backup_path: Path):
@@ -144,23 +157,24 @@ class MainWindow(QMainWindow):
             finally:
                 self.refresh_backup_list()
 
-    @Slot(int, int)
-    def edit_note_on_double_click(self, row, column):
-        if column == 1: # Note column
+    @Slot(QTableWidgetItem)
+    def save_note_from_item(self, item):
+        if item.column() == 1: # Note column
+            row = item.row()
             timestamp_item = self.history_table.item(row, 0)
             if not timestamp_item:
                 return
-            
+
             timestamp = timestamp_item.text()
-            current_note = self.history_table.item(row, 1).text()
-            
-            new_note, ok = QInputDialog.getText(self, "修改备注", "请输入新的备注:", text=current_note)
-            
-            if ok and new_note != current_note:
-                config = config_manager.load_config()
+            new_note = item.text()
+
+            config = config_manager.load_config()
+            if config["notes"].get(timestamp) != new_note:
                 config["notes"][timestamp] = new_note
                 config_manager.save_config(config)
-                self.refresh_backup_list()
+                self.status_label.setText(f"备注已于 {timestamp} 保存.")
+
+
 
     @Slot()
     def open_settings(self):
@@ -187,3 +201,15 @@ class MainWindow(QMainWindow):
                     subprocess.run(["start", "steam://rungameid/3419290"], shell=True, check=True)
                 except Exception as e:
                     QMessageBox.critical(self, "启动失败", f"无法启动游戏: {e}")
+
+    @staticmethod
+    def get_windows_accent_color():
+        try:
+            dwm = ctypes.windll.dwmapi
+            color = ctypes.c_uint()
+            dwm.DwmGetColorizationColor(ctypes.byref(color), None)
+            rgb = color.value & 0xFFFFFF
+            return QColor((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF)
+        except (AttributeError, OSError):
+            # Fallback for non-Windows or if DWM API is not available
+            return None

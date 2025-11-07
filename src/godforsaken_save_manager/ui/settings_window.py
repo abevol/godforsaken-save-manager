@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QFormLayout, QLineEdit, QPushButton, QSpinBox,
     QCheckBox, QFileDialog, QHBoxLayout, QWidget
 )
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
 
 from ..core import config_manager
 
@@ -13,16 +13,22 @@ class SettingsWindow(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("设置")
+        self.setMinimumWidth(600)
         self.setModal(True)
         self.config = config_manager.load_config()
 
         # Layouts
         self.main_layout = QVBoxLayout(self)
-        self.form_layout = QFormLayout()
+        self.form_widget = QWidget()
+        self.form_widget.setObjectName("settings_form")
+        self.form_layout = QFormLayout(self.form_widget)
+        self.form_layout.setLabelAlignment(Qt.AlignRight)
 
         # Widgets
         self.game_save_path_edit = QLineEdit()
+        self.game_save_path_edit.setObjectName("setting_line_edit")
         self.backup_root_path_edit = QLineEdit()
+        self.backup_root_path_edit.setObjectName("setting_line_edit")
         self.max_history_spinbox = QSpinBox()
         self.max_history_spinbox.setRange(1, 999)
         self.restore_threshold_spinbox = QSpinBox()
@@ -35,6 +41,7 @@ class SettingsWindow(QDialog):
 
         # Action buttons
         self.save_button = QPushButton("保存设置")
+        self.save_button.setDefault(True)
         self.cancel_button = QPushButton("取消")
 
         # Setup UI
@@ -65,7 +72,7 @@ class SettingsWindow(QDialog):
         buttons_layout.addWidget(self.save_button)
         buttons_layout.addWidget(self.cancel_button)
 
-        self.main_layout.addLayout(self.form_layout)
+        self.main_layout.addWidget(self.form_widget)
         self.main_layout.addLayout(buttons_layout)
 
     def _connect_signals(self):

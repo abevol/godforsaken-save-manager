@@ -2,7 +2,7 @@
 
 ## 一、产品概述
 
-**名称：** 神弃之地存档管理工具（GodForsaken Save Manager）
+**名称：** 神弃之地存档备份管理器（GodForsaken Save Backup Manager）
 **版本：** v1.0
 **目标用户：** 《神弃之地》正式版玩家
 **目标：**
