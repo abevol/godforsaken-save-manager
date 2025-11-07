@@ -68,7 +68,7 @@
 ## 四、配置文件设计
 
 路径：
-`%USERPROFILE%\AppData\LocalLow\InsightStudio\GodForsakenRelease\config.json`
+`%USERPROFILE%\AppData\LocalLow\InsightStudio\GodForsakenRelease\backup_manager_config.json`
 
 ### JSON 示例
 
@@ -182,7 +182,7 @@ class BackupEntry:
 
 ### `core/config_manager.py`
 
-负责加载与保存 `config.json`，并填充默认值。
+负责加载与保存 `backup_manager_config.json`，并填充默认值。
 
 ```python
 DEFAULTS = {

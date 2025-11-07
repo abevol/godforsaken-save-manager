@@ -2,8 +2,10 @@ import json
 import os
 from pathlib import Path
 
+from godforsaken_save_manager.common.constants import CONFIG_FILE_NAME
+
 CONFIG_DIR = Path(os.path.expandvars("%USERPROFILE%")) / "AppData" / "LocalLow" / "InsightStudio" / "GodForsakenRelease"
-CONFIG_FILE = CONFIG_DIR / "config.json"
+CONFIG_FILE = CONFIG_DIR / CONFIG_FILE_NAME
 
 DEFAULTS = {
     "game_save_path": str(CONFIG_DIR / "game_save"),
@@ -22,7 +24,7 @@ def ensure_config_file_exists():
         save_config({})
 
 def load_config() -> dict:
-    """Loads the configuration from config.json, returning defaults if it doesn't exist."""
+    """Loads the configuration from backup_manager_config.json, returning defaults if it doesn't exist."""
     if not CONFIG_FILE.is_file():
         return ensure_defaults({})
     
@@ -34,7 +36,7 @@ def load_config() -> dict:
     return ensure_defaults(config)
 
 def save_config(config: dict):
-    """Saves the configuration to config.json, creating the directory if needed."""
+    """Saves the configuration to backup_manager_config.json, creating the directory if needed."""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     full_config = ensure_defaults(config)
     with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
