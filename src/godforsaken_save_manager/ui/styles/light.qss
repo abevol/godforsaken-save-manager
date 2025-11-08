@@ -35,9 +35,15 @@ QGroupBox {
     font-size: 16px;
 }
 
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top center;
+    padding: 0 5px;
+}
+
 QTabBar::tab {
-    font-size: 16px;
-    padding: 10px 20px;
+    font-size: 14px;
+    padding: 8px 16px;
     border: 1px solid #cccccc;
     border-bottom: none;
     border-top-left-radius: 6px;
