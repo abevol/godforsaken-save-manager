@@ -101,8 +101,6 @@ class SettingsWindow(QDialog):
     def _save_and_close(self):
         self.config["game_save_path"] = self.game_save_path_edit.text()
         self.config["backup_root_path"] = self.backup_root_path_edit.text()
-        # Auto backup path is derived from backup path
-        self.config["auto_backup_root_path"] = self.backup_root_path_edit.text().replace("_my_bak", "_auto_bak")
         self.config["max_history"] = self.max_history_spinbox.value()
         self.config["restore_confirm_threshold_minutes"] = self.restore_threshold_spinbox.value()
         self.config["auto_launch_game"] = self.auto_launch_checkbox.isChecked()

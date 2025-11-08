@@ -17,9 +17,9 @@
 
 | 功能            | 说明                                                                |
 | ------------- | ----------------------------------------------------------------- |
-| **手动备份**      | 将当前存档复制为 `game_save_my_bak\YYYY-MM-DD_HH-MM-SS` 格式目录。             |
-| **自动备份（恢复前）** | 恢复存档时，若当前存档未存在备份，则自动创建于 `game_save_auto_bak\YYYY-MM-DD_HH-MM-SS`。 |
-| **备注系统**      | 用户可在历史存档列表中为备份添加/修改备注。自动备份将自动标注 `[ 自动备份 ]`。                                |
+| **手动备份**      | 将当前存档复制为 `game_save_my_bak\manual\YYYY-MM-DD_HH-MM-SS` 格式目录。             |
+| **自动备份（恢复前）** | 恢复存档时，若当前存档未存在备份，则自动创建于 `game_save_my_bak\auto\YYYY-MM-DD_HH-MM-SS`。 |
+| **备注系统**      | 用户可在历史存档列表中为备份添加/修改备注。自动备份将自动标注 `[自动备份]`。                                |
 | **历史存档列表**    | 显示所有备份（含自动备份），按存档修改时间倒序排列。备注栏即用于区分手动/自动备份。                        |
 | **最大历史数限制**   | 超过配置上限时，自动删除最早的备份。                                                |
 | **恢复保护**      | 恢复前自动检测当前游戏进程状态、执行必要的保护性自动备份。                                     |
@@ -41,7 +41,7 @@
 |-------------------------------------------------------------|
 | 时间              | 备注                     | 操作           |
 |-------------------------------------------------------------|
-| 2025-11-06_20-05-15 | [ 自动备份 ] 恢复前自动生成 | [恢复] [删除] |
+| 2025-11-06_20-05-15 | [自动备份] 恢复前自动生成 | [恢复] [删除] |
 | 2025-11-06_18-55-22 | 腐化前备份               | [恢复] [删除] |
 | 2025-11-06_18-30-47 | 首次备份                 | [恢复] [删除] |
 +-------------------------------------------------------------+
@@ -68,7 +68,8 @@
 ## 四、配置文件设计
 
 路径：
-`%USERPROFILE%\AppData\LocalLow\InsightStudio\GodForsakenRelease\backup_manager_config.json`
+`{backup_root_path}\backup_manager_config.json`
+（默认位置：`%USERPROFILE%\AppData\LocalLow\InsightStudio\GodForsakenRelease\game_save_my_bak\backup_manager_config.json`）
 
 ### JSON 示例
 
@@ -76,14 +77,13 @@
 {
   "game_save_path": "C:\\Users\\User\\AppData\\LocalLow\\InsightStudio\\GodForsakenRelease\\game_save",
   "backup_root_path": "C:\\Users\\User\\AppData\\LocalLow\\InsightStudio\\GodForsakenRelease\\game_save_my_bak",
-  "auto_backup_root_path": "C:\\Users\\User\\AppData\\LocalLow\\InsightStudio\\GodForsakenRelease\\game_save_auto_bak",
   "last_backup": "",
   "max_history": 20,
   "restore_confirm_threshold_minutes": 20,
   "auto_launch_game": true,
   "notes": {
     "2025-11-06_18-30-47": "腐化前备份",
-    "2025-11-06_19-10-03": "[ 自动备份 ] 恢复前自动生成"
+    "2025-11-06_19-10-03": "[自动备份] 恢复前自动生成"
   }
 }
 ```
@@ -114,7 +114,7 @@
 → 计算目标备份存档的修改时间与当前存档修改时间的差值（分钟）
 → 如果差值超过配置的阈值（restore_confirm_threshold_minutes），则弹出确认对话框，用户确认后才继续，否则中止
 → 若未存在对应备份：
-     自动执行一次自动备份（备注 [ 自动备份 ]）
+     自动执行一次自动备份（备注 [自动备份]）
 → 执行恢复操作（覆盖 game_save）
 → 更新 last_backup
 → 根据设置是否启动游戏
@@ -188,7 +188,6 @@ class BackupEntry:
 DEFAULTS = {
     "game_save_path": "%USERPROFILE%\\AppData\\LocalLow\\InsightStudio\\GodForsakenRelease\\game_save",
     "backup_root_path": "%USERPROFILE%\\AppData\\LocalLow\\InsightStudio\\GodForsakenRelease\\game_save_my_bak",
-    "auto_backup_root_path": "%USERPROFILE%\\AppData\\LocalLow\\InsightStudio\\GodForsakenRelease\\game_save_auto_bak",
     "last_backup": "",
     "max_history": 20,
     "restore_confirm_threshold_minutes": 20,

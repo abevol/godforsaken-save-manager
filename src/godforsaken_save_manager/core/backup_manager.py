@@ -23,8 +23,10 @@ class BackupManager:
         """Lists all manual and auto backups."""
         self._reload_config()
         backups = []
-        manual_bak_path = Path(self.config["backup_root_path"])
-        auto_bak_path = Path(self.config["auto_backup_root_path"])
+        backup_root = Path(self.config["backup_root_path"])
+
+        manual_bak_path = backup_root / "manual"
+        auto_bak_path = backup_root / "auto"
 
         # Process manual backups
         if manual_bak_path.exists():
@@ -74,14 +76,14 @@ class BackupManager:
 
         timestamp_str = helpers.format_timestamp(profile_mtime)
 
+        backup_root = Path(self.config["backup_root_path"])
+
         if auto:
-            backup_root = Path(self.config["auto_backup_root_path"])
+            target_backup_path = backup_root / "auto" / timestamp_str
             final_note = constants.AUTO_BACKUP_NOTE_PREFIX
         else:
-            backup_root = Path(self.config["backup_root_path"])
+            target_backup_path = backup_root / "manual" / timestamp_str
             final_note = note
-
-        target_backup_path = backup_root / timestamp_str
 
         # Check if a backup with the same timestamp already exists in the target location.
         # This provides independent deduplication for manual and auto backups.

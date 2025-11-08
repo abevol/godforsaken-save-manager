@@ -71,3 +71,6 @@ venv.bak/
 
 # OS-specific
 .DS_Store
+
+# Tools environments
+.claude

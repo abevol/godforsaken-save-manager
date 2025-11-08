@@ -1,5 +1,5 @@
 CONFIG_FILE_NAME = "backup_manager_config.json"
 PROFILE_BRIEF_FILE_NAME = "ProfileBrief.ssp"
 GAME_MUTEX_NAME = "n-GOD-FORSAKEN-GodForsaken-exe-SingleInstanceMutex-Default"
-AUTO_BACKUP_NOTE_PREFIX = "[ 自动备份 ]"
+AUTO_BACKUP_NOTE_PREFIX = "[自动备份]"
 DATETIME_FORMAT = "%Y-%m-%d_%H-%M-%S"

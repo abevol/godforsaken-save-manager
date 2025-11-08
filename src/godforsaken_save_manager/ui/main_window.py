@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
         self.top_buttons_layout = QHBoxLayout()
         self.note_input = QLineEdit()
         self.note_input.setObjectName("note_input_main")
-        self.note_input.setPlaceholderText("存档备注")
+        self.note_input.setPlaceholderText("[存档备注]")
         self.backup_button = QPushButton("备份当前存档")
         self.backup_button.setDefault(True)
         self.restore_last_button = QPushButton("恢复最近存档")
