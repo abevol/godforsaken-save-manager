@@ -5,7 +5,7 @@ from pathlib import Path
 
 import ctypes
 
-from PySide6.QtCore import Qt, Slot
+from PySide6.QtCore import Qt, Slot, QTimer
 from PySide6.QtGui import QColor, QIcon
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
@@ -70,6 +70,16 @@ class MainWindow(QMainWindow):
         self.auto_history_table = self._create_history_table()
         self.tab_widget.addTab(self.auto_history_table, "自动备份")
 
+        # Message bubble
+        self.message_bubble = QLabel()
+        self.message_bubble.setObjectName("message_bubble")
+        self.message_bubble.setVisible(False)
+        self.message_bubble.setAlignment(Qt.AlignCenter)
+        self.message_bubble.setWordWrap(True)
+        self.message_bubble_timer = QTimer()
+        self.message_bubble_timer.setSingleShot(True)
+        self.message_bubble_timer.timeout.connect(self.hide_message_bubble)
+
         # Status bar
         self.status_label = QLabel("就绪")
         self.statusBar().addWidget(self.status_label)
@@ -77,6 +87,7 @@ class MainWindow(QMainWindow):
         # Assemble layout
         self.main_layout.addLayout(self.top_layout)
         self.main_layout.addWidget(history_groupbox)
+        self.main_layout.addWidget(self.message_bubble)
 
         # Connect signals
         self.backup_button.clicked.connect(self.manual_backup)
@@ -148,7 +159,7 @@ class MainWindow(QMainWindow):
             # The `auto` parameter is explicitly set to False for manual backups.
             timestamp = self.backup_manager.backup(note=note, auto=False)
             if timestamp:
-                QMessageBox.information(self, "成功", f"存档已备份至 {timestamp}")
+                self.show_message_bubble(f"存档已备份至 {timestamp}")
                 self.note_input.clear()
                 self._maybe_launch_game()
             else:
@@ -196,7 +207,7 @@ class MainWindow(QMainWindow):
         try:
             self.status_label.setText(f"正在从 {backup_path.name} 恢复...")
             self.backup_manager.restore(backup_path)
-            QMessageBox.information(self, "成功", f"已成功从 {backup_path.name} 恢复存档。")
+            self.show_message_bubble(f"已成功从 {backup_path.name} 恢复存档。")
             self._maybe_launch_game()
         except Exception as e:
             QMessageBox.critical(self, "错误", f"恢复失败: {e}")
@@ -238,7 +249,17 @@ class MainWindow(QMainWindow):
                 config_manager.save_config(config)
                 self.status_label.setText(f"备注已于 {timestamp} 保存.")
 
+    def show_message_bubble(self, message: str, duration_ms: int = 5000):
+        """Show a message bubble that auto-hides after duration_ms"""
+        self.message_bubble.setText(message)
+        self.message_bubble.setVisible(True)
+        self.message_bubble_timer.stop()
+        self.message_bubble_timer.start(duration_ms)
 
+    def hide_message_bubble(self):
+        """Hide the message bubble"""
+        self.message_bubble.setVisible(False)
+        self.message_bubble_timer.stop()
 
     @Slot()
     def open_settings(self):

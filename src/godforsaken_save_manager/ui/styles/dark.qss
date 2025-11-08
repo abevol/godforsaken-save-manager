@@ -66,3 +66,13 @@ QTabWidget::pane {
     border: 1px solid #555555;
     top: -1px;
 }
+
+QLabel#message_bubble {
+    background-color: #2d7a3e;
+    color: #ffffff;
+    border: 1px solid #1e5a2d;
+    border-radius: 4px;
+    padding: 10px 15px;
+    font-size: 14px;
+    min-height: 20px;
+}
