@@ -53,17 +53,19 @@ jobs:
           $hashValue = (Get-FileHash -Algorithm SHA256 GodForsakenSaveManager.exe).Hash.ToLower()
           echo "sha256=$hashValue" >> $env:GITHUB_OUTPUT
 
-      - name: Get release notes from tag
-        id: get_release_notes
+      - name: Get release notes
+        id: release_notes
         run: |
           $notes = git tag -l --format='%(contents)' ${{ github.ref_name }}
-          $notes = $notes -replace '"', '\"' -replace "`n", '\n' -replace "`r", '\r'
-          echo "notes=$notes" >> $env:GITHUB_OUTPUT
+          $delimiter = "EOF_MARKER"
+          echo "notes<<$delimiter" >> $env:GITHUB_OUTPUT
+          echo "$notes" >> $env:GITHUB_OUTPUT
+          echo "$delimiter" >> $env:GITHUB_OUTPUT
 
       - name: Create version.json
         run: |
           $version = "${{ github.ref_name }}".substring(1)
-          $notes_json = "${{ steps.get_release_notes.outputs.notes }}"
+          $notes_json = "${{ steps.release_notes.outputs.notes }}"
           # Convention for EN/ZH release notes: "中文说明 EN: English notes"
           if ($notes_json -like '*EN:*') {
             $zh_notes = ($notes_json.Split('EN:')[0]).Trim()
@@ -72,20 +74,25 @@ jobs:
             $zh_notes = $notes_json
             $en_notes = $notes_json
           }
+
+          $version_info = [PSCustomObject]@{
+              version   = $version
+              notes     = @{
+                  zh = $zh_notes
+                  en = $en_notes
+              }
+              url       = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/GodForsakenSaveManager.exe"
+              sha256    = "${{ steps.hash.outputs.sha256 }}"
+              timestamp = (Get-Date -Format o)
+          }
           
-          $json = "{ \"version\": \"$version\", " +
-                  "\"notes\": {\"zh\": \"$zh_notes\", \"en\": \"$en_notes\"}, " +
-                  "\"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/GodForsakenSaveManager.exe\", " +
-                  "\"sha256\": \"${{ steps.hash.outputs.sha256 }}\", " +
-                  "\"timestamp\": \"$(Get-Date -Format o)\" }"
-          
-          echo $json | Out-File -Encoding utf8 version.json
+          $version_info | ConvertTo-Json -Compress | Out-File -Encoding utf8 version.json
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          body: ${{ steps.get_release_notes.outputs.notes }}
+          body: ${{ steps.release_notes.outputs.notes }}
           files: |
             GodForsakenSaveManager.exe
             version.json
