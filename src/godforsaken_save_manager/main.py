@@ -1,7 +1,18 @@
 
 import sys
-import ctypes
 import os
+
+# Add the 'src' directory to the Python path.
+# This is crucial for Nuitka builds to locate the main module when the entry script
+# is nested inside the package. We determine the absolute path to the 'src'
+# directory (which is two levels up from this file's location) and insert it at
+# the beginning of the system path if it's not already there. This ensures that
+# the import `from godforsaken_save_manager...` works reliably.
+src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
+
+import ctypes
 import time
 import shutil
 import subprocess

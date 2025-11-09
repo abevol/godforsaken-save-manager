@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "godforsaken-save-manager"
-version = "0.0.6"
+version = "0.0.7"
 description = "A save management tool for GodForsaken"
 authors = ["七夜听雪 <abevol@github.com>"]
 packages = [{ include = "godforsaken_save_manager", from = "src" }]
