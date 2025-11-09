@@ -44,6 +44,7 @@ jobs:
             --include-data-dir=src/godforsaken_save_manager/resources=resources `
             --include-data-dir=src/godforsaken_save_manager/ui/styles=ui/styles `
             --output-filename=GodForsakenSaveManager.exe `
+            --assume-yes-for-downloads `
             src/godforsaken_save_manager/main.py
 
       - name: Compute SHA256 hash

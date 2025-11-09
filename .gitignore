@@ -74,3 +74,4 @@ venv.bak/
 
 # Tools environments
 .claude
+/.github/action_logs
