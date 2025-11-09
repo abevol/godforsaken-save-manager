@@ -37,6 +37,9 @@ jobs:
             exit 1
           }
 
+      - name: Generate version file
+        run: poetry run python docs/scripts/prepare_build.py
+
       - name: Build executable with Nuitka
         working-directory: ${{ github.workspace }}/src
         run: |
