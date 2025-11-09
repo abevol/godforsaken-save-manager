@@ -5,13 +5,13 @@ import os
 import time
 import shutil
 import subprocess
-from importlib import metadata
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QPalette
 
 from godforsaken_save_manager.ui.main_window import MainWindow
 from godforsaken_save_manager.core import config_manager
 from godforsaken_save_manager.common.paths import get_base_path
+from godforsaken_save_manager.common.constants import APP_VERSION
 
 def handle_update():
     """
@@ -42,8 +42,7 @@ def main():
 
     # Set AppUserModelID to ensure the taskbar icon is correct, especially in dev.
     # This should be a unique string for the application.
-    version = metadata.version('godforsaken-save-manager')
-    my_app_id = f'dev.jason.godforsaken-save-manager.{version}'
+    my_app_id = f'dev.jason.godforsaken-save-manager.{APP_VERSION}'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(my_app_id)
 
     # Ensure config file is created on first run

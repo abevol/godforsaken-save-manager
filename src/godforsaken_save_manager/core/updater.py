@@ -7,9 +7,8 @@ import hashlib
 import logging
 import locale
 from typing import Optional, Dict, Any
-from importlib import metadata
 
-from ..common.constants import GITHUB_REPO
+from ..common.constants import GITHUB_REPO, APP_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +29,7 @@ class Updater:
     def __init__(self):
         self.api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
         self.latest_version_info: Optional[Dict[str, Any]] = None
-        try:
-            self.current_version = metadata.version('godforsaken-save-manager')
-        except metadata.PackageNotFoundError:
-            self.current_version = "0.0.0-dev"
+        self.current_version = APP_VERSION
 
     def get_update_notes(self) -> str:
         """

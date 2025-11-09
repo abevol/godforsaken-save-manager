@@ -3,7 +3,6 @@ import os
 import subprocess
 from pathlib import Path
 import logging
-from importlib import metadata
 
 import ctypes
 
@@ -19,6 +18,7 @@ from ..core import backup_manager, process_checker, config_manager
 from ..core.updater import Updater
 from .settings_window import SettingsWindow
 from ..common.paths import get_base_path
+from ..common.constants import APP_VERSION
 from ..i18n.translator import t, get_translator, init_translator
 
 logger = logging.getLogger(__name__)
@@ -65,8 +65,7 @@ class MainWindow(QMainWindow):
         self.check_for_updates()
 
     def _init_ui(self):
-        version = metadata.version('godforsaken-save-manager')
-        self.setWindowTitle(t('ui.main_window.title', version=version))
+        self.setWindowTitle(t('ui.main_window.title', version=APP_VERSION))
 
         # Use the robust path helper to find the icon
         base_path = get_base_path()
@@ -117,7 +116,7 @@ class MainWindow(QMainWindow):
         self.message_bubble = QLabel()
         self.message_bubble.setObjectName("message_bubble")
         self.message_bubble.setVisible(False)
-        self.message_bubble.setAlignment(Qt.AlignCenter)
+        self.message_bubble.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.message_bubble.setWordWrap(True)
         self.message_bubble_timer = QTimer()
         self.message_bubble_timer.setSingleShot(True)
@@ -167,11 +166,11 @@ class MainWindow(QMainWindow):
             self,
             t('ui.dialogs.update_available_title'),
             t('ui.dialogs.update_available_message', version=version, notes=notes),
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.Yes
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes
         )
 
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             self.status_label.setText(t('ui.main_window.status_downloading_update'))
             # This will block the UI, a second worker thread would be better for production
             new_exe_path = self.updater.download_and_verify()
@@ -196,7 +195,7 @@ class MainWindow(QMainWindow):
 
     def _create_history_table(self) -> QTableWidget:
         table = QTableWidget()
-        table.setFrameShape(QFrame.NoFrame)
+        table.setFrameShape(QFrame.Shape.NoFrame)
         table.setColumnCount(4)
         table.setHorizontalHeaderLabels([
             t('ui.main_window.table_headers.time'),
@@ -204,11 +203,11 @@ class MainWindow(QMainWindow):
             t('ui.main_window.table_headers.restore'),
             t('ui.main_window.table_headers.delete')
         ])
-        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        table.setSelectionBehavior(QTableWidget.SelectRows)
+        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         return table
 
     def refresh_backup_list(self):
@@ -231,7 +230,7 @@ class MainWindow(QMainWindow):
         table.setRowCount(len(backups))
         for row, backup_entry in enumerate(backups):
             timestamp_item = QTableWidgetItem(backup_entry.timestamp)
-            timestamp_item.setFlags(timestamp_item.flags() & ~Qt.ItemIsEditable)
+            timestamp_item.setFlags(timestamp_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             table.setItem(row, 0, timestamp_item)
 
             note_item = QTableWidgetItem(backup_entry.note)
@@ -299,9 +298,9 @@ class MainWindow(QMainWindow):
             reply = QMessageBox.question(
                 self, t('ui.dialogs.confirm_restore'),
                 t('ui.dialogs.confirm_restore_message', minutes=f"{time_diff:.0f}", threshold=threshold),
-                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No
             )
-            if reply == QMessageBox.No:
+            if reply == QMessageBox.StandardButton.No:
                 return
 
         try:
@@ -319,9 +318,9 @@ class MainWindow(QMainWindow):
         reply = QMessageBox.question(
             self, t('ui.dialogs.confirm_delete'),
             t('ui.dialogs.confirm_delete_message', backup_name=backup_path.name),
-            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No
         )
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.StandardButton.Yes:
             try:
                 self.status_label.setText(t('ui.main_window.status_deleting', path=backup_path.name))
                 self.backup_manager.delete(backup_path)
@@ -377,8 +376,7 @@ class MainWindow(QMainWindow):
 
     def _retranslate_ui(self):
         """重新翻译UI"""
-        version = metadata.version('godforsaken-save-manager')
-        self.setWindowTitle(t('ui.main_window.title', version=version))
+        self.setWindowTitle(t('ui.main_window.title', version=APP_VERSION))
         self.note_input.setPlaceholderText(t('ui.main_window.note_placeholder'))
         self.backup_button.setText(t('ui.main_window.backup_button'))
         self.restore_last_button.setText(t('ui.main_window.restore_last_button'))
@@ -422,9 +420,9 @@ class MainWindow(QMainWindow):
         else:
             reply = QMessageBox.question(
                 self, t('ui.dialogs.operation_complete'), t('ui.dialogs.launch_game_question'),
-                QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.Yes
             )
-            if reply == QMessageBox.Yes:
+            if reply == QMessageBox.StandardButton.Yes:
                 self._launch_game()
 
     def _launch_game(self):

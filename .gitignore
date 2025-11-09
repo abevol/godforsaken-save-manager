@@ -29,6 +29,9 @@ MANIFEST
 *.build/
 *.dist/
 *.onefile-build/
+
+# Auto-generated version file
+src/godforsaken_save_manager/_version.py
 GodForsakenSaveManager.exe
 
 # PyInstaller

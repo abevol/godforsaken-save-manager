@@ -46,6 +46,7 @@ jobs:
             --enable-plugin=pyside6 `
             --include-data-dir=src/godforsaken_save_manager/resources=resources `
             --include-data-dir=src/godforsaken_save_manager/ui/styles=ui/styles `
+            --include-data-dir=src/godforsaken_save_manager/i18n/langs=i18n/langs `
             --output-filename=GodForsakenSaveManager.exe `
             --assume-yes-for-downloads `
             src/godforsaken_save_manager/main.py

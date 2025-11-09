@@ -70,7 +70,7 @@ class Translator:
 
     def load_translations(self, language_code: str) -> bool:
         """加载指定语言的翻译文件"""
-        translation_file = self._base_path / "i18n" / f"{language_code}.json"
+        translation_file = self._base_path / "i18n" / "langs" / f"{language_code}.json"
 
         if not translation_file.exists():
             # 如果指定语言文件不存在，回退到英文

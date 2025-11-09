@@ -34,7 +34,7 @@
             "save_path_label": "Save Path:",
             "backup_path_label": "Backup Path:",
             "max_history_label": "Max History:",
-            "restore_threshold_label": "Restore Confirmation Threshold (min):",
+            "restore_threshold_label": "Restore Threshold (min):",
             "auto_launch_label": "Auto launch game after backup/restore",
             "language_label": "Language:",
             "auto_detect": "Auto Detect",
