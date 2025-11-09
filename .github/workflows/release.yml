@@ -36,7 +36,15 @@ jobs:
 
       - name: Build executable with Nuitka
         run: |
-          poetry run nuitka src/godforsaken_save_manager/main.py --standalone --onefile --output-filename=GodForsakenSaveManager.exe --windows-icon-from-ico=src/godforsaken_save_manager/resources/app.ico --disable-console
+          poetry run nuitka `
+            --standalone `
+            --onefile `
+            --windows-icon-from-ico="src/godforsaken_save_manager/resources/app.ico" `
+            --enable-plugin=pyside6 `
+            --include-data-dir=src/godforsaken_save_manager/resources=resources `
+            --include-data-dir=src/godforsaken_save_manager/ui/styles=ui/styles `
+            --output-filename=GodForsakenSaveManager.exe `
+            src/godforsaken_save_manager/main.py
 
       - name: Compute SHA256 hash
         id: hash

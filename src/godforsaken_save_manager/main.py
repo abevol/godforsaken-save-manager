@@ -5,6 +5,7 @@ import os
 import time
 import shutil
 import subprocess
+from importlib import metadata
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QPalette
 
@@ -41,7 +42,8 @@ def main():
 
     # Set AppUserModelID to ensure the taskbar icon is correct, especially in dev.
     # This should be a unique string for the application.
-    my_app_id = 'dev.jason.godforsaken-save-manager.1.0'
+    version = metadata.version('godforsaken-save-manager')
+    my_app_id = f'dev.jason.godforsaken-save-manager.{version}'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(my_app_id)
 
     # Ensure config file is created on first run

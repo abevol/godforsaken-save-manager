@@ -5,7 +5,7 @@
     },
     "ui": {
         "main_window": {
-            "title": "GodForsaken Save Backup Manager v1.0",
+            "title": "GodForsaken Save Backup Manager v{version}",
             "backup_button": "Backup Current Save",
             "restore_last_button": "Restore Latest Save",
             "settings_button": "Settings",
@@ -48,7 +48,7 @@
             "confirm_restore": "Confirm Restore",
             "confirm_restore_message": "This save was created {minutes} minutes ago, which exceeds your configured threshold of {threshold} minutes.\n\nAre you sure you want to restore this old save?",
             "game_running": "Game Running",
-            "game_running_message": "Please close GodForsaken.exe before performing this operation.",
+            "game_running_message": "Please close the game GodForsaken.exe before performing this operation.",
             "operation_complete": "Operation Complete",
             "launch_game_question": "Launch game now?",
             "warning": "Warning",

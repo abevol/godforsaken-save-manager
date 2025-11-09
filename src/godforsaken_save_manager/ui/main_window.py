@@ -3,6 +3,7 @@ import os
 import subprocess
 from pathlib import Path
 import logging
+from importlib import metadata
 
 import ctypes
 
@@ -36,6 +37,8 @@ class UpdateWorker(QThread):
         self.updater = updater
 
     def run(self):
+        if self.isInterruptionRequested():
+            return
         try:
             update_info = self.updater.check_for_update()
             if update_info:
@@ -62,8 +65,8 @@ class MainWindow(QMainWindow):
         self.check_for_updates()
 
     def _init_ui(self):
-        """初始化UI"""
-        self.setWindowTitle(t('ui.main_window.title'))
+        version = metadata.version('godforsaken-save-manager')
+        self.setWindowTitle(t('ui.main_window.title', version=version))
 
         # Use the robust path helper to find the icon
         base_path = get_base_path()
@@ -374,7 +377,8 @@ class MainWindow(QMainWindow):
 
     def _retranslate_ui(self):
         """重新翻译UI"""
-        self.setWindowTitle(t('ui.main_window.title'))
+        version = metadata.version('godforsaken-save-manager')
+        self.setWindowTitle(t('ui.main_window.title', version=version))
         self.note_input.setPlaceholderText(t('ui.main_window.note_placeholder'))
         self.backup_button.setText(t('ui.main_window.backup_button'))
         self.restore_last_button.setText(t('ui.main_window.restore_last_button'))
@@ -429,6 +433,19 @@ class MainWindow(QMainWindow):
             subprocess.run(["start", "steam://rungameid/3419290"], shell=True, check=True)
         except Exception as e:
             QMessageBox.critical(self, t('ui.dialogs.launch_failed'), t('ui.dialogs.launch_failed', error=e))
+
+    def closeEvent(self, event):
+        """
+        Handles the window close event to ensure threads are stopped.
+        """
+        if self.update_thread and self.update_thread.isRunning():
+            self.update_thread.requestInterruption()
+            self.update_thread.quit()
+            # Wait for the thread to finish, with a timeout of 2 seconds
+            if not self.update_thread.wait(2000):
+                logger.warning("Update thread did not terminate in time.")
+        
+        event.accept()
 
     @staticmethod
     def get_windows_accent_color():

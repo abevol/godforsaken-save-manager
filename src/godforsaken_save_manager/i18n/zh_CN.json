@@ -5,7 +5,7 @@
     },
     "ui": {
         "main_window": {
-            "title": "神弃之地存档备份管理器 v1.0",
+            "title": "神弃之地存档备份管理器 v{version}",
             "backup_button": "备份当前存档",
             "restore_last_button": "恢复最近存档",
             "settings_button": "设置",
@@ -48,7 +48,7 @@
             "confirm_restore": "确认恢复",
             "confirm_restore_message": "该存档创建于 {minutes} 分钟前，远超于您设置的 {threshold} 分钟阈值。\n\n确定要恢复这个旧存档吗？",
             "game_running": "游戏正在运行",
-            "game_running_message": "请先关闭《神弃之地》(GodForsaken.exe) 再执行此操作。",
+            "game_running_message": "请先关闭游戏《神弃之地》(GodForsaken.exe) 再执行此操作。",
             "operation_complete": "操作完成",
             "launch_game_question": "是否立即启动游戏？",
             "warning": "注意",
