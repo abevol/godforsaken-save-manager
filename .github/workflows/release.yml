@@ -38,23 +38,25 @@ jobs:
           }
 
       - name: Build executable with Nuitka
+        working-directory: ${{ github.workspace }}/src
         run: |
           poetry run nuitka `
             --standalone `
             --onefile `
-            --windows-icon-from-ico="src/godforsaken_save_manager/resources/app.ico" `
+            --windows-icon-from-ico="godforsaken_save_manager/resources/app.ico" `
             --enable-plugin=pyside6 `
-            --include-data-dir=src/godforsaken_save_manager/resources=resources `
-            --include-data-dir=src/godforsaken_save_manager/ui/styles=ui/styles `
-            --include-data-dir=src/godforsaken_save_manager/i18n/langs=i18n/langs `
+            --include-data-dir=godforsaken_save_manager/resources=resources `
+            --include-data-dir=godforsaken_save_manager/ui/styles=ui/styles `
+            --include-data-dir=godforsaken_save_manager/i18n/langs=i18n/langs `
+            --output-dir=${{ github.workspace }}/build `
             --output-filename=GodForsakenSaveManager.exe `
             --assume-yes-for-downloads `
-            src/godforsaken_save_manager/main.py
+            godforsaken_save_manager/main.py
 
       - name: Compute SHA256 hash
         id: hash
         run: |
-          $hashValue = (Get-FileHash -Algorithm SHA256 GodForsakenSaveManager.exe).Hash.ToLower()
+          $hashValue = (Get-FileHash -Algorithm SHA256 build/GodForsakenSaveManager.exe).Hash.ToLower()
           echo "sha256=$hashValue" >> $env:GITHUB_OUTPUT
 
       - name: Get release notes
@@ -98,7 +100,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           body: ${{ steps.release_notes.outputs.notes }}
           files: |
-            GodForsakenSaveManager.exe
+            build/GodForsakenSaveManager.exe
             version.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
