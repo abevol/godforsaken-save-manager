@@ -5,11 +5,23 @@ import sys
 import subprocess
 import hashlib
 import logging
+import locale
 from typing import Optional, Dict, Any
+from importlib import metadata
 
-from ..common.constants import APP_VERSION, GITHUB_REPO
+from ..common.constants import GITHUB_REPO
 
 logger = logging.getLogger(__name__)
+
+def get_local_lang() -> str:
+    """
+    Gets the default system language, returns 'zh' for Chinese, 'en' otherwise.
+    """
+    try:
+        lang, _ = locale.getdefaultlocale()
+        return "zh" if lang and lang.startswith("zh") else "en"
+    except Exception:
+        return "en"
 
 class Updater:
     """
@@ -18,6 +30,24 @@ class Updater:
     def __init__(self):
         self.api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
         self.latest_version_info: Optional[Dict[str, Any]] = None
+        try:
+            self.current_version = metadata.version('godforsaken-save-manager')
+        except metadata.PackageNotFoundError:
+            self.current_version = "0.0.0-dev"
+
+    def get_update_notes(self) -> str:
+        """
+        Extracts localized update notes from the latest version info.
+        """
+        if not self.latest_version_info:
+            return ""
+
+        notes = self.latest_version_info.get("notes", {})
+        if isinstance(notes, str):  # For backward compatibility
+            return notes
+        
+        lang = get_local_lang()
+        return notes.get(lang, notes.get("en", "No release notes available."))
 
     def check_for_update(self) -> Optional[Dict[str, Any]]:
         """
@@ -29,8 +59,7 @@ class Updater:
             data = response.json()
             latest_version = data["tag_name"].lstrip("v")
 
-            # Simple version comparison, can be improved with packaging.version
-            if self._is_newer(latest_version, APP_VERSION):
+            if self._is_newer(latest_version, self.current_version):
                 logger.info(f"New version found: {latest_version}")
                 asset = next((a for a in data["assets"] if a["name"] == "version.json"), None)
                 if asset:
@@ -41,11 +70,11 @@ class Updater:
                 else:
                     logger.warning("Release found, but version.json is missing.")
             else:
-                logger.info(f"Current version {APP_VERSION} is up to date.")
+                logger.info(f"Current version {self.current_version} is up to date.")
 
         except requests.RequestException as e:
             logger.error(f"Failed to check for updates: {e}")
-        except (KeyError, StopIteration):
+        except (KeyError, StopIteration, ValueError):
             logger.error("Failed to parse release API response.")
         
         return None
@@ -54,9 +83,13 @@ class Updater:
         """
         Compares two version strings (e.g., "1.2.0" vs "1.1.0").
         """
-        new_parts = list(map(int, new_version.split('.')))
-        current_parts = list(map(int, current_version.split('.')))
-        return new_parts > current_parts
+        try:
+            new_parts = list(map(int, new_version.split('.')))
+            current_parts = list(map(int, current_version.split('.')))
+            return new_parts > current_parts
+        except ValueError:
+            logger.warning(f"Could not compare versions '{new_version}' and '{current_version}'")
+            return False
 
     def download_and_verify(self) -> Optional[str]:
         """
@@ -69,7 +102,8 @@ class Updater:
         exe_url = self.latest_version_info["url"]
         expected_sha256 = self.latest_version_info["sha256"]
         file_name = os.path.basename(exe_url)
-        target_path = os.path.join(tempfile.gettempdir(), f"new_{file_name}")
+        # Use a more specific name for the new executable
+        target_path = os.path.join(tempfile.gettempdir(), f"GodForsakenSaveManager_new.exe")
 
         try:
             logger.info(f"Downloading update from {exe_url} to {target_path}...")
@@ -89,7 +123,7 @@ class Updater:
             
             actual_sha256 = hasher.hexdigest()
 
-            if actual_sha256.lower() != expected_sha256.lower():
+            if actual_sha256.lower() != expected_sha256.lower().strip():
                 logger.error(f"Checksum mismatch! Expected {expected_sha256}, got {actual_sha256}")
                 os.remove(target_path)
                 return None
@@ -104,33 +138,19 @@ class Updater:
 
         return None
 
-    def apply_update(self, exe_path: str):
+    def apply_update(self, new_exe_path: str):
         """
-        Launches the new executable and exits the current application.
+        Launches the new executable with parameters to perform the update,
+        and exits the current application.
         """
-        logger.info(f"Launching updated application at {exe_path}...")
+        logger.info(f"Launching updater process with {new_exe_path}...")
         try:
-            # Using Popen to detach the new process
-            subprocess.Popen([exe_path], shell=True)
-            logger.info("Exiting current application.")
+            # The new executable will be responsible for replacing the old one.
+            # We pass the path to the current executable so the new one knows what to replace.
+            subprocess.Popen([new_exe_path, "--perform-update", sys.executable])
+            logger.info("Exiting current application to allow update.")
             sys.exit(0)
         except OSError as e:
             logger.error(f"Failed to launch new executable: {e}")
-
-def run_updater_task():
-    """
-    Entry point for the update check.
-    """
-    updater = Updater()
-    update_info = updater.check_for_update()
-    if update_info:
-        # In a real GUI app, you would prompt the user here.
-        # For this implementation, we proceed automatically.
-        new_exe_path = updater.download_and_verify()
-        if new_exe_path:
-            updater.apply_update(new_exe_path)
-
-if __name__ == "__main__":
-    # For testing purposes
-    logging.basicConfig(level=logging.INFO)
-    run_updater_task()
+        except Exception as e:
+            logger.error(f"An unexpected error occurred while applying update: {e}")

@@ -1,6 +1,10 @@
 
 import sys
 import ctypes
+import os
+import time
+import shutil
+import subprocess
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QPalette
 
@@ -8,8 +12,33 @@ from godforsaken_save_manager.ui.main_window import MainWindow
 from godforsaken_save_manager.core import config_manager
 from godforsaken_save_manager.common.paths import get_base_path
 
+def handle_update():
+    """
+    Handles the second stage of the update process.
+    This code runs when the new executable is launched with '--perform-update'.
+    """
+    if len(sys.argv) > 2 and sys.argv[1] == '--perform-update':
+        old_exe_path = sys.argv[2]
+        # Give the old process time to terminate gracefully
+        time.sleep(2)
+        try:
+            # The new executable is sys.executable. We move it to replace the old one.
+            shutil.move(sys.executable, old_exe_path)
+            # Relaunch the application from its original path
+            subprocess.Popen([old_exe_path])
+        except Exception as e:
+            # If something goes wrong, we can't do much, but this might help debugging.
+            # In a real-world app, you might want to show a message box.
+            print(f"FATAL: Failed to apply update. {e}")
+        finally:
+            # Exit the temporary updater process
+            sys.exit(0)
+
 def main():
     """Main function to run the application."""
+    # First thing: handle the update process if applicable
+    handle_update()
+
     # Set AppUserModelID to ensure the taskbar icon is correct, especially in dev.
     # This should be a unique string for the application.
     my_app_id = 'dev.jason.godforsaken-save-manager.1.0'

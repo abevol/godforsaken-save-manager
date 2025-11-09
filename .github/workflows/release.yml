@@ -1,67 +1,84 @@
-name: Release
+name: Build and Release Public
 
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - 'v*'
 
 jobs:
-  build-and-release:
+  build:
     runs-on: windows-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required to fetch tags
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install Poetry
-        run: pip install poetry
-
-      - name: Install dependencies
-        run: poetry install
+      - name: Install Poetry and dependencies
+        run: |
+          pip install poetry
+          poetry install --no-interaction --no-root
+      
+      - name: Check version consistency
+        run: |
+          $tag_version = "${{ github.ref_name }}".substring(1)
+          $toml_version = poetry version -s
+          if ($tag_version -ne $toml_version) {
+            echo "Error: Tag version ($tag_version) does not match pyproject.toml version ($toml_version)."
+            exit 1
+          }
 
       - name: Build executable with Nuitka
         run: |
-          poetry run nuitka --standalone --onefile --output-filename=GodForsakenSaveManager.exe --windows-icon-from-ico=src/godforsaken_save_manager/resources/app.ico src/godforsaken_save_manager/main.py
+          poetry run nuitka src/godforsaken_save_manager/main.py --standalone --onefile --output-filename=GodForsakenSaveManager.exe --windows-icon-from-ico=src/godforsaken_save_manager/resources/app.ico --disable-console
 
-      - name: Calculate SHA256 hash
+      - name: Compute SHA256 hash
         id: hash
         run: |
-          echo "sha256=$(CertUtil -hashfile GodForsakenSaveManager.exe SHA256 | Select-String -NotMatch "SHA256" | ForEach-Object { $_.ToString().Trim() })" >> $env:GITHUB_OUTPUT
-        shell: pwsh
+          $hashValue = (Get-FileHash -Algorithm SHA256 GodForsakenSaveManager.exe).Hash.ToLower()
+          echo "sha256=$hashValue" >> $env:GITHUB_OUTPUT
 
-      - name: Generate version.json
-        id: version_json
+      - name: Get release notes from tag
+        id: get_release_notes
         run: |
-          $version = "${{ github.ref_name }}".substring(1)
-          $notes = "Automated release for version $version"
-          $url = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/GodForsakenSaveManager.exe"
-          $sha256 = "${{ steps.hash.outputs.sha256 }}"
-          $timestamp = (Get-Date).ToUniversalTime().ToString("o")
-          $json = @{
-            version = $version
-            notes = $notes
-            url = $url
-            sha256 = $sha256
-            timestamp = $timestamp
-          } | ConvertTo-Json -Compress
-          echo $json > version.json
-          echo "Created version.json:"
-          cat version.json
-        shell: pwsh
+          $notes = git tag -l --format='%(contents)' ${{ github.ref_name }}
+          $notes = $notes -replace '"', '\"' -replace "`n", '\n' -replace "`r", '\r'
+          echo "notes=$notes" >> $env:GITHUB_OUTPUT
 
-      - name: Create Release
+      - name: Create version.json
+        run: |
+          $notes_json = "${{ steps.get_release_notes.outputs.notes }}"
+          # Convention for EN/ZH release notes: "中文说明 EN: English notes"
+          if ($notes_json -like '*EN:*') {
+            $zh_notes = ($notes_json.Split('EN:')[0]).Trim()
+            $en_notes = ($notes_json.Split('EN:')[1]).Trim()
+          } else {
+            $zh_notes = $notes_json
+            $en_notes = $notes_json
+          }
+          
+          $json = "{ \"version\": \"${{ github.ref_name }}\".substring(1), " +
+                  "\"notes\": {\"zh\": \"$zh_notes\", \"en\": \"$en_notes\"}, " +
+                  "\"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/GodForsakenSaveManager.exe\", " +
+                  "\"sha256\": \"${{ steps.hash.outputs.sha256 }}\", " +
+                  "\"timestamp\": \"$(Get-Date -Format o)\" }"
+          
+          echo $json | Out-File -Encoding utf8 version.json
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: "Release ${{ github.ref_name }}"
-          body: "Automated build and release of version ${{ github.ref_name }}."
+          body: ${{ steps.get_release_notes.outputs.notes }}
           files: |
             GodForsakenSaveManager.exe
             version.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
