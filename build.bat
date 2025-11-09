@@ -10,10 +10,10 @@ echo Building GodForsakenSaveManager.exe...
 call poetry run nuitka ^
   --standalone ^
   --onefile ^
-  --windows-icon-from-ico="src/godforsaken_save_manager/ui/resources/app.ico" ^
+  --windows-icon-from-ico="src/godforsaken_save_manager/resources/app.ico" ^
   --enable-plugin=pyside6 ^
-  --include-data-dir=src/godforsaken_save_manager/ui/styles=styles ^
-  --include-data-dir=src/godforsaken_save_manager/ui/resources=resources ^
+  --include-data-dir=src/godforsaken_save_manager/resources=resources ^
+  --include-data-dir=src/godforsaken_save_manager/ui/styles=ui/styles ^
   --output-dir=build ^
   --output-filename=GodForsakenSaveManager.exe ^
   src/godforsaken_save_manager/main.py

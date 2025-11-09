@@ -1,0 +1,79 @@
+{
+    "language": {
+        "chinese_simplified": "简体中文",
+        "english": "English"
+    },
+    "ui": {
+        "main_window": {
+            "title": "GodForsaken Save Backup Manager v1.0",
+            "backup_button": "Backup Current Save",
+            "restore_last_button": "Restore Latest Save",
+            "settings_button": "Settings",
+            "note_placeholder": "[Save Note]",
+            "history_group": "Save History",
+            "manual_backup_tab": "Manual Backups",
+            "auto_backup_tab": "Auto Backups",
+            "status_ready": "Ready",
+            "status_refreshing": "Refreshing backup list...",
+            "status_backuping": "Backing up...",
+            "status_restoring": "Restoring from {path}...",
+            "status_deleting": "Deleting {path}...",
+            "table_headers": {
+                "time": "Time",
+                "note": "Note",
+                "restore": "Restore",
+                "delete": "Delete"
+            }
+        },
+        "settings_window": {
+            "title": "Settings",
+            "save_path_label": "Save Path:",
+            "backup_path_label": "Backup Path:",
+            "max_history_label": "Max History:",
+            "restore_threshold_label": "Restore Confirmation Threshold (min):",
+            "auto_launch_label": "Auto launch game after backup/restore",
+            "language_label": "Language:",
+            "auto_detect": "Auto Detect",
+            "select_button": "Select",
+            "save_button": "Save Settings",
+            "cancel_button": "Cancel"
+        },
+        "dialogs": {
+            "confirm_delete": "Confirm Delete",
+            "confirm_delete_message": "Are you sure you want to permanently delete backup {backup_name}?",
+            "confirm_restore": "Confirm Restore",
+            "confirm_restore_message": "This save was created {minutes} minutes ago, which exceeds your configured threshold of {threshold} minutes.\n\nAre you sure you want to restore this old save?",
+            "game_running": "Game Running",
+            "game_running_message": "Please close GodForsaken.exe before performing this operation.",
+            "operation_complete": "Operation Complete",
+            "launch_game_question": "Launch game now?",
+            "warning": "Warning",
+            "error": "Error",
+            "success": "Success",
+            "backup_exists_message": "A backup with the same timestamp already exists. No new backup was created.",
+            "no_recent_backup": "No recent backup record found.",
+            "backup_not_found": "Backup file not found: {path}",
+            "backup_success": "Save backed up to {timestamp}",
+            "restore_success": "Successfully restored save from {backup_name}.",
+            "note_saved": "Note saved for {timestamp}.",
+            "backup_failed": "Backup failed: {error}",
+            "restore_failed": "Restore failed: {error}",
+            "delete_failed": "Delete failed: {error}",
+            "launch_failed": "Failed to launch game: {error}",
+            "select_game_save_path": "Select Game Save Path",
+            "select_backup_path": "Select Backup Root Path"
+        },
+        "file_dialog": {
+            "select_game_save_title": "Select Game Save Path",
+            "select_backup_title": "Select Backup Root Path"
+        }
+    },
+    "backup": {
+        "auto_backup_note": "[Auto Backup] Generated before restore"
+    },
+    "config": {
+        "language": "Language",
+        "chinese_simplified": "简体中文",
+        "english": "English"
+    }
+}

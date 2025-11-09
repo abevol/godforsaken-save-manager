@@ -1,0 +1,79 @@
+{
+    "language": {
+        "chinese_simplified": "简体中文",
+        "english": "English"
+    },
+    "ui": {
+        "main_window": {
+            "title": "神弃之地存档备份管理器 v1.0",
+            "backup_button": "备份当前存档",
+            "restore_last_button": "恢复最近存档",
+            "settings_button": "设置",
+            "note_placeholder": "[存档备注]",
+            "history_group": "历史存档",
+            "manual_backup_tab": "手动备份",
+            "auto_backup_tab": "自动备份",
+            "status_ready": "就绪",
+            "status_refreshing": "正在刷新备份列表...",
+            "status_backuping": "正在备份...",
+            "status_restoring": "正在从 {path} 恢复...",
+            "status_deleting": "正在删除 {path}...",
+            "table_headers": {
+                "time": "时间",
+                "note": "备注",
+                "restore": "恢复",
+                "delete": "删除"
+            }
+        },
+        "settings_window": {
+            "title": "设置",
+            "save_path_label": "存档路径:",
+            "backup_path_label": "备份路径:",
+            "max_history_label": "最大历史数量:",
+            "restore_threshold_label": "恢复确认阈值(分钟):",
+            "auto_launch_label": "备份/恢复后自动启动游戏",
+            "language_label": "语言:",
+            "auto_detect": "自动检测",
+            "select_button": "选择",
+            "save_button": "保存设置",
+            "cancel_button": "取消"
+        },
+        "dialogs": {
+            "confirm_delete": "确认删除",
+            "confirm_delete_message": "确定要永久删除备份 {backup_name} 吗？",
+            "confirm_restore": "确认恢复",
+            "confirm_restore_message": "该存档创建于 {minutes} 分钟前，远超于您设置的 {threshold} 分钟阈值。\n\n确定要恢复这个旧存档吗？",
+            "game_running": "游戏正在运行",
+            "game_running_message": "请先关闭《神弃之地》(GodForsaken.exe) 再执行此操作。",
+            "operation_complete": "操作完成",
+            "launch_game_question": "是否立即启动游戏？",
+            "warning": "注意",
+            "error": "错误",
+            "success": "成功",
+            "backup_exists_message": "已存在相同时间戳的存档，本次未创建新备份。",
+            "no_recent_backup": "没有找到最近的备份记录。",
+            "backup_not_found": "备份文件不存在: {path}",
+            "backup_success": "存档已备份至 {timestamp}",
+            "restore_success": "已成功从 {backup_name} 恢复存档。",
+            "note_saved": "备注已于 {timestamp} 保存.",
+            "backup_failed": "备份失败: {error}",
+            "restore_failed": "恢复失败: {error}",
+            "delete_failed": "删除失败: {error}",
+            "launch_failed": "无法启动游戏: {error}",
+            "select_game_save_path": "选择游戏存档路径",
+            "select_backup_path": "选择备份根路径"
+        },
+        "file_dialog": {
+            "select_game_save_title": "选择游戏存档路径",
+            "select_backup_title": "选择备份根路径"
+        }
+    },
+    "backup": {
+        "auto_backup_note": "[自动备份] 恢复前自动生成"
+    },
+    "config": {
+        "language": "语言",
+        "chinese_simplified": "简体中文",
+        "english": "English"
+    }
+}

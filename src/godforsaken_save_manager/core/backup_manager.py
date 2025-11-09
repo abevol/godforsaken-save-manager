@@ -7,11 +7,15 @@ from typing import List
 from . import config_manager, file_operations, process_checker
 from .backup_entry import BackupEntry
 from ..common import constants, helpers
+from ..i18n.translator import t, init_translator
 
 
 class BackupManager:
     def __init__(self):
         self.config = config_manager.load_config()
+        # 初始化翻译器
+        language = self.config.get("language")
+        init_translator(language)
 
     def _reload_config(self):
         self.config = config_manager.load_config()
@@ -80,7 +84,7 @@ class BackupManager:
 
         if auto:
             target_backup_path = backup_root / "auto" / timestamp_str
-            final_note = constants.AUTO_BACKUP_NOTE_PREFIX
+            final_note = t('backup.auto_backup_note')
         else:
             target_backup_path = backup_root / "manual" / timestamp_str
             final_note = note

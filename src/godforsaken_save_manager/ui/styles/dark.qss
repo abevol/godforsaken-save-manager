@@ -76,3 +76,7 @@ QLabel#message_bubble {
     font-size: 14px;
     min-height: 20px;
 }
+
+QLabel#status_label {
+    padding: 4px 8px;
+}

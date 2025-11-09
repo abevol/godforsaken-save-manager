@@ -16,16 +16,26 @@ from PySide6.QtWidgets import (
 from ..core import backup_manager, process_checker, config_manager
 from .settings_window import SettingsWindow
 from ..common.paths import get_base_path
+from ..i18n.translator import t, get_translator, init_translator
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("神弃之地存档备份管理器 v1.0")
+
+        # 初始化翻译器
+        config = config_manager.load_config()
+        language = config.get("language")
+        init_translator(language)
+
+        self.translator = get_translator()
+        self._init_ui()
+
+    def _init_ui(self):
+        """初始化UI"""
+        self.setWindowTitle(t('ui.main_window.title'))
 
         # Use the robust path helper to find the icon
-        # In dev, base_path is .../ui/
-        # In prod, base_path is the temp _MEIPASS folder
         base_path = get_base_path()
         icon_path = base_path / "resources" / "app.ico"
         self.setWindowIcon(QIcon(str(icon_path)))
@@ -44,11 +54,11 @@ class MainWindow(QMainWindow):
         self.top_buttons_layout = QHBoxLayout()
         self.note_input = QLineEdit()
         self.note_input.setObjectName("note_input_main")
-        self.note_input.setPlaceholderText("[存档备注]")
-        self.backup_button = QPushButton("备份当前存档")
+        self.note_input.setPlaceholderText(t('ui.main_window.note_placeholder'))
+        self.backup_button = QPushButton(t('ui.main_window.backup_button'))
         self.backup_button.setDefault(True)
-        self.restore_last_button = QPushButton("恢复最近存档")
-        self.settings_button = QPushButton("设置")
+        self.restore_last_button = QPushButton(t('ui.main_window.restore_last_button'))
+        self.settings_button = QPushButton(t('ui.main_window.settings_button'))
         self.top_buttons_layout.addWidget(self.backup_button)
         self.top_buttons_layout.addWidget(self.restore_last_button)
         self.top_buttons_layout.addStretch()
@@ -57,18 +67,18 @@ class MainWindow(QMainWindow):
         self.top_layout.addWidget(self.note_input)
 
         # History section
-        history_groupbox = QGroupBox("历史存档")
+        history_groupbox = QGroupBox(t('ui.main_window.history_group'))
         history_layout = QVBoxLayout(history_groupbox)
         self.tab_widget = QTabWidget()
         history_layout.addWidget(self.tab_widget)
 
         # Manual backups tab
         self.manual_history_table = self._create_history_table()
-        self.tab_widget.addTab(self.manual_history_table, "手动备份")
+        self.tab_widget.addTab(self.manual_history_table, t('ui.main_window.manual_backup_tab'))
 
         # Auto backups tab
         self.auto_history_table = self._create_history_table()
-        self.tab_widget.addTab(self.auto_history_table, "自动备份")
+        self.tab_widget.addTab(self.auto_history_table, t('ui.main_window.auto_backup_tab'))
 
         # Message bubble
         self.message_bubble = QLabel()
@@ -81,7 +91,8 @@ class MainWindow(QMainWindow):
         self.message_bubble_timer.timeout.connect(self.hide_message_bubble)
 
         # Status bar
-        self.status_label = QLabel("就绪")
+        self.status_label = QLabel(t('ui.main_window.status_ready'))
+        self.status_label.setObjectName("status_label")
         self.statusBar().addWidget(self.status_label)
 
         # Assemble layout
@@ -102,7 +113,12 @@ class MainWindow(QMainWindow):
         table = QTableWidget()
         table.setFrameShape(QFrame.NoFrame)
         table.setColumnCount(4)
-        table.setHorizontalHeaderLabels(["时间", "备注", "", ""]) # Ops
+        table.setHorizontalHeaderLabels([
+            t('ui.main_window.table_headers.time'),
+            t('ui.main_window.table_headers.note'),
+            t('ui.main_window.table_headers.restore'),
+            t('ui.main_window.table_headers.delete')
+        ])
         table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -111,11 +127,11 @@ class MainWindow(QMainWindow):
         return table
 
     def refresh_backup_list(self):
-        self.status_label.setText("正在刷新备份列表...")
+        self.status_label.setText(t('ui.main_window.status_refreshing'))
         self.backup_manager._reload_config() # Ensure config is fresh
-        
+
         all_backups = self.backup_manager.list_backups()
-        
+
         # I am assuming backup_entry has an 'auto' attribute.
         # This is a reasonable assumption given the `backup` method signature.
         manual_backups = [b for b in all_backups if not b.auto]
@@ -123,8 +139,8 @@ class MainWindow(QMainWindow):
 
         self._populate_history_table(self.manual_history_table, manual_backups)
         self._populate_history_table(self.auto_history_table, auto_backups)
-        
-        self.status_label.setText("就绪")
+
+        self.status_label.setText(t('ui.main_window.status_ready'))
 
     def _populate_history_table(self, table: QTableWidget, backups: list):
         table.setRowCount(len(backups))
@@ -137,13 +153,13 @@ class MainWindow(QMainWindow):
             table.setItem(row, 1, note_item)
 
             # Restore button
-            restore_btn = QPushButton("恢复")
+            restore_btn = QPushButton(t('ui.main_window.table_headers.restore'))
             restore_btn.setObjectName("table_button")
             restore_btn.clicked.connect(lambda _, p=backup_entry.path: self.restore_backup(p))
             table.setCellWidget(row, 2, restore_btn)
 
             # Delete button
-            delete_btn = QPushButton("删除")
+            delete_btn = QPushButton(t('ui.main_window.table_headers.delete'))
             delete_btn.setObjectName("table_button")
             delete_btn.clicked.connect(lambda _, p=backup_entry.path: self.delete_backup(p))
             table.setCellWidget(row, 3, delete_btn)
@@ -155,17 +171,17 @@ class MainWindow(QMainWindow):
 
         note = self.note_input.text()
         try:
-            self.status_label.setText("正在备份...")
+            self.status_label.setText(t('ui.main_window.status_backuping'))
             # The `auto` parameter is explicitly set to False for manual backups.
             timestamp = self.backup_manager.backup(note=note, auto=False)
             if timestamp:
-                self.show_message_bubble(f"存档已备份至 {timestamp}")
+                self.show_message_bubble(t('ui.dialogs.backup_success', timestamp=timestamp))
                 self.note_input.clear()
                 self._maybe_launch_game()
             else:
-                QMessageBox.warning(self, "注意", "已存在相同时间戳的存档，本次未创建新备份。")
+                QMessageBox.warning(self, t('ui.dialogs.warning'), t('ui.dialogs.backup_exists_message'))
         except Exception as e:
-            QMessageBox.critical(self, "错误", f"备份失败: {e}")
+            QMessageBox.critical(self, t('ui.dialogs.error'), t('ui.dialogs.backup_failed', error=e))
         finally:
             self.refresh_backup_list()
 
@@ -176,12 +192,12 @@ class MainWindow(QMainWindow):
 
         last_backup_path_str = self.backup_manager.config.get("last_backup")
         if not last_backup_path_str:
-            QMessageBox.warning(self, "错误", "没有找到最近的备份记录。")
+            QMessageBox.warning(self, t('ui.dialogs.error'), t('ui.dialogs.no_recent_backup'))
             return
 
         last_backup_path = Path(last_backup_path_str)
         if not last_backup_path.exists():
-            QMessageBox.warning(self, "错误", f"备份文件不存在: {last_backup_path}")
+            QMessageBox.warning(self, t('ui.dialogs.error'), t('ui.dialogs.backup_not_found', path=last_backup_path))
             return
 
         self.restore_backup(last_backup_path)
@@ -196,36 +212,36 @@ class MainWindow(QMainWindow):
         threshold = self.backup_manager.config.get("restore_confirm_threshold_minutes", 20)
         if time_diff > threshold:
             reply = QMessageBox.question(
-                self, "确认恢复",
-                f"该存档创建于 {time_diff:.0f} 分钟前，远超于您设置的 {threshold} 分钟阈值。\n\n" \
-                f"确定要恢复这个旧存档吗？",
+                self, t('ui.dialogs.confirm_restore'),
+                t('ui.dialogs.confirm_restore_message', minutes=f"{time_diff:.0f}", threshold=threshold),
                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No
             )
             if reply == QMessageBox.No:
                 return
 
         try:
-            self.status_label.setText(f"正在从 {backup_path.name} 恢复...")
+            self.status_label.setText(t('ui.main_window.status_restoring', path=backup_path.name))
             self.backup_manager.restore(backup_path)
-            self.show_message_bubble(f"已成功从 {backup_path.name} 恢复存档。")
+            self.show_message_bubble(t('ui.dialogs.restore_success', backup_name=backup_path.name))
             self._maybe_launch_game()
         except Exception as e:
-            QMessageBox.critical(self, "错误", f"恢复失败: {e}")
+            QMessageBox.critical(self, t('ui.dialogs.error'), t('ui.dialogs.restore_failed', error=e))
         finally:
             self.refresh_backup_list()
 
     @Slot(Path)
     def delete_backup(self, backup_path: Path):
         reply = QMessageBox.question(
-            self, "确认删除", f"确定要永久删除备份 {backup_path.name} 吗？",
+            self, t('ui.dialogs.confirm_delete'),
+            t('ui.dialogs.confirm_delete_message', backup_name=backup_path.name),
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
         if reply == QMessageBox.Yes:
             try:
-                self.status_label.setText(f"正在删除 {backup_path.name}...")
+                self.status_label.setText(t('ui.main_window.status_deleting', path=backup_path.name))
                 self.backup_manager.delete(backup_path)
             except Exception as e:
-                QMessageBox.critical(self, "错误", f"删除失败: {e}")
+                QMessageBox.critical(self, t('ui.dialogs.error'), t('ui.dialogs.delete_failed', error=e))
             finally:
                 self.refresh_backup_list()
 
@@ -247,7 +263,7 @@ class MainWindow(QMainWindow):
             if config["notes"].get(timestamp) != new_note:
                 config["notes"][timestamp] = new_note
                 config_manager.save_config(config)
-                self.status_label.setText(f"备注已于 {timestamp} 保存.")
+                self.status_label.setText(t('ui.dialogs.note_saved', timestamp=timestamp))
 
     def show_message_bubble(self, message: str, duration_ms: int = 5000):
         """Show a message bubble that auto-hides after duration_ms"""
@@ -265,11 +281,49 @@ class MainWindow(QMainWindow):
     def open_settings(self):
         settings_dialog = SettingsWindow(self)
         settings_dialog.settings_saved.connect(self.refresh_backup_list)
+        settings_dialog.language_changed.connect(self._on_language_changed)
         settings_dialog.exec()
+
+    def _on_language_changed(self, language_code: str):
+        """语言改变时的处理"""
+        self._retranslate_ui()
+
+    def _retranslate_ui(self):
+        """重新翻译UI"""
+        self.setWindowTitle(t('ui.main_window.title'))
+        self.note_input.setPlaceholderText(t('ui.main_window.note_placeholder'))
+        self.backup_button.setText(t('ui.main_window.backup_button'))
+        self.restore_last_button.setText(t('ui.main_window.restore_last_button'))
+        self.settings_button.setText(t('ui.main_window.settings_button'))
+
+        # 重新设置表格标题
+        headers = [
+            t('ui.main_window.table_headers.time'),
+            t('ui.main_window.table_headers.note'),
+            t('ui.main_window.table_headers.restore'),
+            t('ui.main_window.table_headers.delete')
+        ]
+        self.manual_history_table.setHorizontalHeaderLabels(headers)
+        self.auto_history_table.setHorizontalHeaderLabels(headers)
+
+        # 重新设置标签页标题
+        self.tab_widget.setTabText(0, t('ui.main_window.manual_backup_tab'))
+        self.tab_widget.setTabText(1, t('ui.main_window.auto_backup_tab'))
+
+        # 重新设置历史存档组标题
+        # 找到QGroupBox并重新设置标题
+        for i in range(self.main_layout.count()):
+            widget = self.main_layout.itemAt(i).widget()
+            if isinstance(widget, QGroupBox):
+                widget.setTitle(t('ui.main_window.history_group'))
+                break
+
+        self.status_label.setText(t('ui.main_window.status_ready'))
+        self.refresh_backup_list()
 
     def _check_game_running(self) -> bool:
         if process_checker.is_game_running():
-            QMessageBox.warning(self, "游戏正在运行", "请先关闭《神弃之地》(GodForsaken.exe) 再执行此操作。")
+            QMessageBox.warning(self, t('ui.dialogs.game_running'), t('ui.dialogs.game_running_message'))
             return True
         return False
 
@@ -279,7 +333,7 @@ class MainWindow(QMainWindow):
             self._launch_game()
         else:
             reply = QMessageBox.question(
-                self, "操作完成", "是否立即启动游戏？",
+                self, t('ui.dialogs.operation_complete'), t('ui.dialogs.launch_game_question'),
                 QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes
             )
             if reply == QMessageBox.Yes:
@@ -290,7 +344,7 @@ class MainWindow(QMainWindow):
             # For Windows, use start command to open steam url
             subprocess.run(["start", "steam://rungameid/3419290"], shell=True, check=True)
         except Exception as e:
-            QMessageBox.critical(self, "启动失败", f"无法启动游戏: {e}")
+            QMessageBox.critical(self, t('ui.dialogs.launch_failed'), t('ui.dialogs.launch_failed', error=e))
 
     @staticmethod
     def get_windows_accent_color():

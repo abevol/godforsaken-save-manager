@@ -30,5 +30,5 @@ def get_base_path() -> Path:
         # poetry script. Use the path of *this* file (paths.py) as a
         # reliable anchor.
         # This file is at: <project_root>/src/godforsaken_save_manager/common/paths.py
-        # The resources are in: <project_root>/src/godforsaken_save_manager/ui/
-        return Path(__file__).parent.parent / "ui"
+        # The return value is: <project_root>/src/godforsaken_save_manager
+        return Path(__file__).parent.parent

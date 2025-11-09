@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 from godforsaken_save_manager.common.constants import CONFIG_FILE_NAME
+from godforsaken_save_manager.i18n.translator import Language
 
 GAME_PROFILE_DIR = Path(os.path.expandvars("%USERPROFILE%")) / "AppData" / "LocalLow" / "InsightStudio" / "GodForsakenRelease"
 DEFAULT_BACKUP_ROOT_PATH = GAME_PROFILE_DIR / "game_save_my_bak"
@@ -20,6 +21,7 @@ DEFAULTS = {
     "max_history": 30,
     "restore_confirm_threshold_minutes": 20,
     "auto_launch_game": True,
+    "language": None,  # None表示自动检测系统语言
     "notes": {}
 }
 

@@ -27,7 +27,7 @@ def main():
         # A lightness value < 128 is generally considered dark
         is_dark_theme = app.palette().color(QPalette.ColorRole.Window).lightness() < 128
         theme = "dark" if is_dark_theme else "light"
-        style_file = base_path / "styles" / f"{theme}.qss"
+        style_file = base_path / "ui" / "styles" / f"{theme}.qss"
 
         if style_file.exists():
             with open(style_file, "r", encoding="utf-8") as f:
