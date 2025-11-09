@@ -62,6 +62,7 @@ jobs:
 
       - name: Create version.json
         run: |
+          $version = "${{ github.ref_name }}".substring(1)
           $notes_json = "${{ steps.get_release_notes.outputs.notes }}"
           # Convention for EN/ZH release notes: "中文说明 EN: English notes"
           if ($notes_json -like '*EN:*') {
@@ -72,7 +73,7 @@ jobs:
             $en_notes = $notes_json
           }
           
-          $json = "{ \"version\": \"${{ github.ref_name }}\".substring(1), " +
+          $json = "{ \"version\": \"$version\", " +
                   "\"notes\": {\"zh\": \"$zh_notes\", \"en\": \"$en_notes\"}, " +
                   "\"url\": \"https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/GodForsakenSaveManager.exe\", " +
                   "\"sha256\": \"${{ steps.hash.outputs.sha256 }}\", " +
