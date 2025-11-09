@@ -18,6 +18,10 @@
             "status_backuping": "正在备份...",
             "status_restoring": "正在从 {path} 恢复...",
             "status_deleting": "正在删除 {path}...",
+            "status_checking_update": "正在检查更新...",
+            "status_downloading_update": "正在下载更新...",
+            "status_up_to_date": "已是最新版本",
+            "status_update_error": "检查更新失败",
             "table_headers": {
                 "time": "时间",
                 "note": "备注",
@@ -61,7 +65,11 @@
             "delete_failed": "删除失败: {error}",
             "launch_failed": "无法启动游戏: {error}",
             "select_game_save_path": "选择游戏存档路径",
-            "select_backup_path": "选择备份根路径"
+            "select_backup_path": "选择备份根路径",
+            "update_available_title": "发现新版本",
+            "update_available_message": "检测到新版本 {version}。\n\n更新说明:\n{notes}\n\n是否立即下载并更新？",
+            "update_no_notes": "无更新说明。",
+            "update_failed": "更新失败，请稍后重试或手动下载。"
         },
         "file_dialog": {
             "select_game_save_title": "选择游戏存档路径",

@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Build executable with Nuitka
+        run: |
+          poetry run nuitka --standalone --onefile --output-filename=GodForsakenSaveManager.exe --windows-icon-from-ico=src/godforsaken_save_manager/resources/app.ico src/godforsaken_save_manager/main.py
+
+      - name: Calculate SHA256 hash
+        id: hash
+        run: |
+          echo "sha256=$(CertUtil -hashfile GodForsakenSaveManager.exe SHA256 | Select-String -NotMatch "SHA256" | ForEach-Object { $_.ToString().Trim() })" >> $env:GITHUB_OUTPUT
+        shell: pwsh
+
+      - name: Generate version.json
+        id: version_json
+        run: |
+          $version = "${{ github.ref_name }}".substring(1)
+          $notes = "Automated release for version $version"
+          $url = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/GodForsakenSaveManager.exe"
+          $sha256 = "${{ steps.hash.outputs.sha256 }}"
+          $timestamp = (Get-Date).ToUniversalTime().ToString("o")
+          $json = @{
+            version = $version
+            notes = $notes
+            url = $url
+            sha256 = $sha256
+            timestamp = $timestamp
+          } | ConvertTo-Json -Compress
+          echo $json > version.json
+          echo "Created version.json:"
+          cat version.json
+        shell: pwsh
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "Release ${{ github.ref_name }}"
+          body: "Automated build and release of version ${{ github.ref_name }}."
+          files: |
+            GodForsakenSaveManager.exe
+            version.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

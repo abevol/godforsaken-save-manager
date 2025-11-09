@@ -18,6 +18,10 @@
             "status_backuping": "Backing up...",
             "status_restoring": "Restoring from {path}...",
             "status_deleting": "Deleting {path}...",
+            "status_checking_update": "Checking for updates...",
+            "status_downloading_update": "Downloading update...",
+            "status_up_to_date": "Application is up to date",
+            "status_update_error": "Update check failed",
             "table_headers": {
                 "time": "Time",
                 "note": "Note",
@@ -61,7 +65,11 @@
             "delete_failed": "Delete failed: {error}",
             "launch_failed": "Failed to launch game: {error}",
             "select_game_save_path": "Select Game Save Path",
-            "select_backup_path": "Select Backup Root Path"
+            "select_backup_path": "Select Backup Root Path",
+            "update_available_title": "Update Available",
+            "update_available_message": "A new version {version} is available.\n\nRelease notes:\n{notes}\n\nWould you like to download and install it now?",
+            "update_no_notes": "No release notes provided.",
+            "update_failed": "Update failed. Please try again later or download manually."
         },
         "file_dialog": {
             "select_game_save_title": "Select Game Save Path",

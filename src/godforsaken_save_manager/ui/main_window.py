@@ -2,10 +2,11 @@
 import os
 import subprocess
 from pathlib import Path
+import logging
 
 import ctypes
 
-from PySide6.QtCore import Qt, Slot, QTimer
+from PySide6.QtCore import Qt, Slot, QTimer, QThread, Signal
 from PySide6.QtGui import QColor, QIcon
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
@@ -14,9 +15,36 @@ from PySide6.QtWidgets import (
 )
 
 from ..core import backup_manager, process_checker, config_manager
+from ..core.updater import Updater
 from .settings_window import SettingsWindow
 from ..common.paths import get_base_path
 from ..i18n.translator import t, get_translator, init_translator
+
+logger = logging.getLogger(__name__)
+
+
+class UpdateWorker(QThread):
+    """
+    Worker thread to check for updates in the background.
+    """
+    update_found = Signal(dict)
+    no_update = Signal()
+    error = Signal(str)
+
+    def __init__(self, updater: Updater):
+        super().__init__()
+        self.updater = updater
+
+    def run(self):
+        try:
+            update_info = self.updater.check_for_update()
+            if update_info:
+                self.update_found.emit(update_info)
+            else:
+                self.no_update.emit()
+        except Exception as e:
+            logger.error(f"Update check failed in worker thread: {e}")
+            self.error.emit(str(e))
 
 
 class MainWindow(QMainWindow):
@@ -29,7 +57,9 @@ class MainWindow(QMainWindow):
         init_translator(language)
 
         self.translator = get_translator()
+        self.updater = Updater()
         self._init_ui()
+        self.check_for_updates()
 
     def _init_ui(self):
         """初始化UI"""
@@ -108,6 +138,58 @@ class MainWindow(QMainWindow):
         self.auto_history_table.itemChanged.connect(self.save_note_from_item)
 
         self.refresh_backup_list()
+
+    def check_for_updates(self):
+        self.status_label.setText(t('ui.main_window.status_checking_update'))
+        self.update_thread = QThread()
+        self.update_worker = UpdateWorker(self.updater)
+        self.update_worker.moveToThread(self.update_thread)
+
+        self.update_thread.started.connect(self.update_worker.run)
+        self.update_worker.finished.connect(self.update_thread.quit)
+        self.update_worker.finished.connect(self.update_worker.deleteLater)
+        self.update_thread.finished.connect(self.update_thread.deleteLater)
+
+        self.update_worker.update_found.connect(self.on_update_found)
+        self.update_worker.no_update.connect(self.on_no_update)
+        self.update_worker.error.connect(self.on_update_error)
+
+        self.update_thread.start()
+
+    @Slot(dict)
+    def on_update_found(self, info):
+        version = info.get('version', 'N/A')
+        notes = info.get('notes', t('ui.dialogs.update_no_notes'))
+        reply = QMessageBox.information(
+            self,
+            t('ui.dialogs.update_available_title'),
+            t('ui.dialogs.update_available_message', version=version, notes=notes),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes
+        )
+
+        if reply == QMessageBox.Yes:
+            self.status_label.setText(t('ui.main_window.status_downloading_update'))
+            # This will block the UI, a second worker thread would be better for production
+            new_exe_path = self.updater.download_and_verify()
+            if new_exe_path:
+                self.updater.apply_update(new_exe_path)
+            else:
+                QMessageBox.critical(self, t('ui.dialogs.error'), t('ui.dialogs.update_failed'))
+                self.status_label.setText(t('ui.main_window.status_ready'))
+
+    @Slot()
+    def on_no_update(self):
+        self.status_label.setText(t('ui.main_window.status_up_to_date'))
+        # Hide the message after a few seconds
+        QTimer.singleShot(5000, lambda: self.status_label.setText(t('ui.main_window.status_ready')))
+
+    @Slot(str)
+    def on_update_error(self, error_message):
+        self.status_label.setText(t('ui.main_window.status_update_error'))
+        logger.error(f"Update check error: {error_message}")
+        # Hide the message after a few seconds
+        QTimer.singleShot(5000, lambda: self.status_label.setText(t('ui.main_window.status_ready')))
 
     def _create_history_table(self) -> QTableWidget:
         table = QTableWidget()
@@ -287,6 +369,8 @@ class MainWindow(QMainWindow):
     def _on_language_changed(self, language_code: str):
         """语言改变时的处理"""
         self._retranslate_ui()
+
+
 
     def _retranslate_ui(self):
         """重新翻译UI"""
