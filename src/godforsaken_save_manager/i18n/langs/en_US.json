@@ -69,7 +69,9 @@
             "update_available_title": "Update Available",
             "update_available_message": "A new version {version} is available.\n\nRelease notes:\n{notes}\n\nWould you like to download and install it now?",
             "update_no_notes": "No release notes provided.",
-            "update_failed": "Update failed. Please try again later or download manually."
+            "update_failed": "Update failed. Please try again later or download manually.",
+            "downloading_title": "Downloading Update",
+            "cancel": "Cancel"
         },
         "file_dialog": {
             "select_game_save_title": "Select Game Save Path",

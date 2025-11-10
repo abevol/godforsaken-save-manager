@@ -11,7 +11,7 @@ from PySide6.QtGui import QColor, QIcon
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
     QTableWidgetItem, QHeaderView, QMessageBox, QInputDialog, QLabel, QLineEdit,
-    QGroupBox, QTabWidget, QFrame, QApplication
+    QGroupBox, QTabWidget, QFrame, QApplication, QProgressDialog
 )
 
 from ..core import backup_manager, process_checker, config_manager
@@ -50,6 +50,28 @@ class UpdateWorker(QThread):
             self.error.emit(str(e))
 
 
+class DownloadWorker(QThread):
+    """
+    Worker thread to download update in the background.
+    """
+    progress = Signal(int)
+    finished = Signal(str) # Emits path on success, empty string on failure
+
+    def __init__(self, updater: Updater):
+        super().__init__()
+        self.updater = updater
+
+    def run(self):
+        try:
+            new_exe_path = self.updater.download_and_verify(
+                progress_callback=self.progress.emit
+            )
+            self.finished.emit(new_exe_path or "")
+        except Exception as e:
+            logger.error(f"Download failed in worker thread: {e}")
+            self.finished.emit("")
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -61,6 +83,8 @@ class MainWindow(QMainWindow):
 
         self.translator = get_translator()
         self.updater = Updater()
+        self.update_thread = None
+        self.download_thread = None
         self._init_ui()
         self.check_for_updates()
 
@@ -175,20 +199,51 @@ class MainWindow(QMainWindow):
 
         if reply == QMessageBox.StandardButton.Yes:
             self.status_label.setText(t('ui.main_window.status_downloading_update'))
-            # This will block the UI, a second worker thread would be better for production
-            new_exe_path = self.updater.download_and_verify()
+            
+            progress_dialog = QProgressDialog(
+                t('ui.dialogs.downloading_title'), 
+                t('ui.dialogs.cancel'), 0, 100, self
+            )
+            progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
+            progress_dialog.setAutoClose(True)
+            progress_dialog.setMinimumWidth(500) # Make the dialog wider
+            progress_dialog.show()
+
+            self.download_thread = QThread()
+            self.download_worker = DownloadWorker(self.updater)
+            self.download_worker.moveToThread(self.download_thread)
+
+            self.download_worker.progress.connect(progress_dialog.setValue)
+            self.download_thread.started.connect(self.download_worker.run)
+            self.download_worker.finished.connect(self.on_download_finished)
+            self.download_worker.finished.connect(self.download_thread.quit)
+            self.download_worker.finished.connect(self.download_worker.deleteLater)
+            self.download_thread.finished.connect(self.download_thread.deleteLater)
+            
+            progress_dialog.canceled.connect(self._stop_download_thread)
+
+            self.download_thread.start()
+
+    @Slot(str)
+    def on_download_finished(self, new_exe_path):
+        if self.download_thread and not self.download_thread.isInterruptionRequested():
             if new_exe_path:
                 self.updater.apply_update(new_exe_path)
                 self.quit_for_update()
             else:
                 QMessageBox.critical(self, t('ui.dialogs.error'), t('ui.dialogs.update_failed'))
                 self.status_label.setText(t('ui.main_window.status_ready'))
+        else:
+            # Download was canceled
+            self.status_label.setText(t('ui.main_window.status_ready'))
+
 
     @Slot()
     def quit_for_update(self):
         """Safely quits the application after launching the updater."""
         logger.info("Update process launched. Quitting application.")
         self._stop_update_thread()
+        self._stop_download_thread()
         
         from PySide6.QtWidgets import QApplication
         QApplication.instance().quit()
@@ -200,6 +255,15 @@ class MainWindow(QMainWindow):
             self.update_thread.quit()
             if not self.update_thread.wait(2000):  # Wait 2s
                 logger.warning("Update thread did not terminate gracefully.")
+
+    def _stop_download_thread(self):
+        """Helper method to safely stop the download thread."""
+        if self.download_thread and self.download_thread.isRunning():
+            self.download_thread.requestInterruption()
+            self.download_thread.quit()
+            if not self.download_thread.wait(2000): # Wait 2s
+                logger.warning("Download thread did not terminate gracefully.")
+            logger.info("Download canceled by user.")
 
     @Slot()
     def on_no_update(self):
@@ -458,6 +522,7 @@ class MainWindow(QMainWindow):
         Handles the window close event to ensure threads are stopped.
         """
         self._stop_update_thread()
+        self._stop_download_thread()
         event.accept()
 
     @staticmethod

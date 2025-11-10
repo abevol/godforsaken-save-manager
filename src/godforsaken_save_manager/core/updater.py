@@ -80,7 +80,7 @@ class Updater:
             logger.warning(f"Could not compare versions '{new_version}' and '{current_version}'")
             return False
 
-    def download_and_verify(self) -> Optional[str]:
+    def download_and_verify(self, progress_callback=None) -> Optional[str]:
         """
         Downloads the new executable, verifies its integrity, and returns the path.
         """
@@ -98,11 +98,20 @@ class Updater:
             logger.info(f"Downloading update from {exe_url} to {target_path}...")
             with requests.get(exe_url, stream=True, timeout=60) as r:
                 r.raise_for_status()
+                total_size = int(r.headers.get('content-length', 0))
+                downloaded_size = 0
                 with open(target_path, "wb") as f:
                     for chunk in r.iter_content(chunk_size=8192):
                         f.write(chunk)
+                        downloaded_size += len(chunk)
+                        if total_size > 0 and progress_callback:
+                            progress = int((downloaded_size / total_size) * 100)
+                            progress_callback(progress)
             
             logger.info("Download complete. Verifying file integrity...")
+            if progress_callback:
+                progress_callback(100) # Ensure it finishes at 100
+
             hasher = hashlib.sha256()
             with open(target_path, "rb") as f:
                 buf = f.read(65536)
