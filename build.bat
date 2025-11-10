@@ -14,6 +14,7 @@ echo Building GodForsakenSaveManager.exe...
 call poetry run nuitka ^
   --standalone ^
   --onefile ^
+  --windows-console-mode=disable ^
   --windows-icon-from-ico="src/godforsaken_save_manager/resources/app.ico" ^
   --enable-plugin=pyside6 ^
   --include-data-dir=src/godforsaken_save_manager/resources=resources ^
