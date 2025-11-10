@@ -66,6 +66,7 @@ jobs:
         id: release_notes
         run: |
           $notes = git tag -l --format='%(contents)' ${{ github.ref_name }}
+          Set-Content -Path release_notes.txt -Value $notes -Encoding utf8
           $delimiter = "EOF_MARKER"
           echo "notes<<$delimiter" >> $env:GITHUB_OUTPUT
           echo "$notes" >> $env:GITHUB_OUTPUT
@@ -74,7 +75,7 @@ jobs:
       - name: Create version.json
         run: |
           $version = "${{ github.ref_name }}".substring(1)
-          $notes_json = "${{ steps.release_notes.outputs.notes }}"
+          $notes_json = Get-Content -Path release_notes.txt -Raw
           # Convention for EN/ZH release notes: "中文说明 EN: English notes"
           if ($notes_json -like '*EN:*') {
             $zh_notes = ($notes_json.Split('EN:')[0]).Trim()
@@ -101,7 +102,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          body: ${{ steps.release_notes.outputs.notes }}
+          body_path: release_notes.txt
           files: |
             build/GodForsakenSaveManager.exe
             version.json

@@ -5,22 +5,13 @@ import sys
 import subprocess
 import hashlib
 import logging
-import locale
 from typing import Optional, Dict, Any
 
 from ..common.constants import GITHUB_REPO, APP_VERSION
+from ..i18n.translator import get_current_language
 
 logger = logging.getLogger(__name__)
 
-def get_local_lang() -> str:
-    """
-    Gets the default system language, returns 'zh' for Chinese, 'en' otherwise.
-    """
-    try:
-        lang, _ = locale.getdefaultlocale()
-        return "zh" if lang and lang.startswith("zh") else "en"
-    except Exception:
-        return "en"
 
 class Updater:
     """
@@ -42,8 +33,10 @@ class Updater:
         if isinstance(notes, str):  # For backward compatibility
             return notes
         
-        lang = get_local_lang()
-        return notes.get(lang, notes.get("en", "No release notes available."))
+        app_lang = get_current_language()  # e.g., 'zh_CN' or 'en_US'
+        lang_short = "zh" if app_lang and app_lang.startswith("zh") else "en"
+        
+        return notes.get(lang_short, notes.get("en", "No release notes available."))
 
     def check_for_update(self) -> Optional[Dict[str, Any]]:
         """
@@ -136,16 +129,19 @@ class Updater:
 
     def apply_update(self, new_exe_path: str):
         """
-        Launches the new executable with parameters to perform the update,
-        and exits the current application.
+        Launches the new executable to perform the update and exits.
+        Uses environment variables to pass information to the new process.
         """
         logger.info(f"Launching updater process with {new_exe_path}...")
         try:
-            # The new executable will be responsible for replacing the old one.
-            # We pass the path to the current executable so the new one knows what to replace.
-            subprocess.Popen([new_exe_path, "--perform-update", sys.executable])
-            logger.info("Exiting current application to allow update.")
-            sys.exit(0)
+            # Use environment variables to signal the new process to perform an update.
+            # This is more reliable for Nuitka-built apps than command-line args.
+            update_env = os.environ.copy()
+            update_env["GFSM_DO_UPDATE"] = "1"
+            update_env["GFSM_UPDATE_PID"] = str(os.getpid())
+            update_env["GFSM_UPDATE_OLD_PATH"] = sys.executable
+            
+            subprocess.Popen([new_exe_path], env=update_env)
         except OSError as e:
             logger.error(f"Failed to launch new executable: {e}")
         except Exception as e:

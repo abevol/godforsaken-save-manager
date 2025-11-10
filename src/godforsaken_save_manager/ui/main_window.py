@@ -11,7 +11,7 @@ from PySide6.QtGui import QColor, QIcon
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTableWidget,
     QTableWidgetItem, QHeaderView, QMessageBox, QInputDialog, QLabel, QLineEdit,
-    QGroupBox, QTabWidget, QFrame
+    QGroupBox, QTabWidget, QFrame, QApplication
 )
 
 from ..core import backup_manager, process_checker, config_manager
@@ -161,7 +161,10 @@ class MainWindow(QMainWindow):
     @Slot(dict)
     def on_update_found(self, info):
         version = info.get('version', 'N/A')
-        notes = info.get('notes', t('ui.dialogs.update_no_notes'))
+        notes = self.updater.get_update_notes()
+        if not notes:
+            notes = t('ui.dialogs.update_no_notes')
+
         reply = QMessageBox.information(
             self,
             t('ui.dialogs.update_available_title'),
@@ -176,9 +179,27 @@ class MainWindow(QMainWindow):
             new_exe_path = self.updater.download_and_verify()
             if new_exe_path:
                 self.updater.apply_update(new_exe_path)
+                self.quit_for_update()
             else:
                 QMessageBox.critical(self, t('ui.dialogs.error'), t('ui.dialogs.update_failed'))
                 self.status_label.setText(t('ui.main_window.status_ready'))
+
+    @Slot()
+    def quit_for_update(self):
+        """Safely quits the application after launching the updater."""
+        logger.info("Update process launched. Quitting application.")
+        self._stop_update_thread()
+        
+        from PySide6.QtWidgets import QApplication
+        QApplication.instance().quit()
+
+    def _stop_update_thread(self):
+        """Helper method to safely stop the update thread."""
+        if self.update_thread and self.update_thread.isRunning():
+            self.update_thread.requestInterruption()
+            self.update_thread.quit()
+            if not self.update_thread.wait(2000):  # Wait 2s
+                logger.warning("Update thread did not terminate gracefully.")
 
     @Slot()
     def on_no_update(self):
@@ -436,13 +457,7 @@ class MainWindow(QMainWindow):
         """
         Handles the window close event to ensure threads are stopped.
         """
-        if self.update_thread and self.update_thread.isRunning():
-            self.update_thread.requestInterruption()
-            self.update_thread.quit()
-            # Wait for the thread to finish, with a timeout of 2 seconds
-            if not self.update_thread.wait(2000):
-                logger.warning("Update thread did not terminate in time.")
-        
+        self._stop_update_thread()
         event.accept()
 
     @staticmethod
